@@ -33,9 +33,9 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
         discoveredDevices = []
         state.connectionStatus = .scanning
 
-        // Scan using service UUIDs from all registered adapters.
-        // Pass nil to scan everything if no adapters are registered (dev/debug mode).
-        let serviceUUIDs = TreadmillAdapterRegistry.shared.allServiceUUIDs
+        // Scan for all peripherals rather than filtering by service UUID.
+        // The registry's matches() method handles brand identification during discovery.
+        // This ensures we don't miss devices that advertise differently than expected.
         centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
 
         print("🔍 [BLE] Scanning for treadmills (registered adapters: \(TreadmillAdapterRegistry.shared.registeredAdapterNames.joined(separator: ", ")))")

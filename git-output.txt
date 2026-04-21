@@ -1,2 +1,71 @@
 === GIT SETUP SCRIPT ===
 Mon Apr 20 21:27:41 PDT 2026
+=== STAGED FILES ===
+M	.gitignore
+M	DeskRun.xcodeproj/project.pbxproj
+A	DeskRun.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+M	DeskRun/BLE/TreadmillBLEManager.swift
+M	DeskRun/DeskRun.entitlements
+M	DeskRun/DeskRunApp.swift
+M	DeskRun/Info.plist
+A	DeskRun/Models/AppSettings.swift
+A	DeskRun/Models/AppState.swift
+A	DeskRun/Models/DataManager.swift
+A	DeskRun/Models/Goal.swift
+A	DeskRun/Models/GoalManager.swift
+A	DeskRun/Models/NotificationManager.swift
+A	DeskRun/Models/StatsCalculator.swift
+A	DeskRun/Models/WorkoutRecord.swift
+A	DeskRun/Models/WorkoutRecorder.swift
+A	DeskRun/Models/WorkoutStore.swift
+M	DeskRun/Views/ConnectionView.swift
+M	DeskRun/Views/ContentView.swift
+M	DeskRun/Views/DashboardView.swift
+A	DeskRun/Views/GoalsView.swift
+A	DeskRun/Views/HistoryView.swift
+M	DeskRun/Views/MenuBarView.swift
+A	DeskRun/Views/SettingsView.swift
+M	README.md
+A	build-deskrun.command
+A	build-output.txt
+A	git-output.txt
+=== COMMITTING ===
+[main 2e91dea] v2: Goal tracking, journey mode, smart notifications, workout history
+ 28 files changed, 2613 insertions(+), 189 deletions(-)
+ create mode 100644 DeskRun.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+ create mode 100644 DeskRun/Models/AppSettings.swift
+ create mode 100644 DeskRun/Models/AppState.swift
+ create mode 100644 DeskRun/Models/DataManager.swift
+ create mode 100644 DeskRun/Models/Goal.swift
+ create mode 100644 DeskRun/Models/GoalManager.swift
+ create mode 100644 DeskRun/Models/NotificationManager.swift
+ create mode 100644 DeskRun/Models/StatsCalculator.swift
+ create mode 100644 DeskRun/Models/WorkoutRecord.swift
+ create mode 100644 DeskRun/Models/WorkoutRecorder.swift
+ create mode 100644 DeskRun/Models/WorkoutStore.swift
+ create mode 100644 DeskRun/Views/GoalsView.swift
+ create mode 100644 DeskRun/Views/HistoryView.swift
+ create mode 100644 DeskRun/Views/SettingsView.swift
+ create mode 100755 build-deskrun.command
+ create mode 100644 build-output.txt
+ create mode 100644 git-output.txt
+=== GIT LOG ===
+2e91dea v2: Goal tracking, journey mode, smart notifications, workout history
+f2a0718 Initial commit: DeskRun macOS treadmill control app
+=== GIT STATUS ===
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   git-output.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+=== GH CLI CHECK ===
+gh CLI is installed
+github.com
+  ✓ Logged in to github.com account tehrenstrom (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'
+=== DONE ===

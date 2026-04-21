@@ -110,6 +110,18 @@ class GoalManager {
         }
     }
 
+    // MARK: - Goal Achievement Sound Check
+
+    func checkGoalAchievement(workouts: [WorkoutRecord], settings: AppSettings) {
+        for goal in activeGoals where goal.timeframe == .daily {
+            let prog = progress(for: goal, workouts: workouts, settings: settings)
+            if prog.percentage >= 1.0 {
+                SoundManager.shared.playGoalAchieved()
+                break
+            }
+        }
+    }
+
     // MARK: - Private
 
     private func workoutsInTimeframe(for goal: Goal, from workouts: [WorkoutRecord]) -> [WorkoutRecord] {

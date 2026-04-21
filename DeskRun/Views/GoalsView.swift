@@ -6,50 +6,58 @@ struct GoalsView: View {
     @State private var showingJourneyPicker = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                HStack {
-                    Text("Your Goals")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Spacer()
-                    Menu {
-                        Button("New Daily Goal") { showingAddGoal = true }
-                        Button("Start a Journey") { showingJourneyPicker = true }
-                    } label: {
-                        Label("Add Goal", systemImage: "plus")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                }
+        ZStack {
+            RetroBackground()
 
-                // Active Goals
-                if appState.goalManager.activeGoals.isEmpty {
-                    emptyState
-                } else {
-                    ForEach(appState.goalManager.activeGoals) { goal in
-                        GoalCard(goal: goal, appState: appState)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Header
+                    HStack {
+                        Text("PROVISIONS")
+                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                            .foregroundStyle(TrailColor.text)
+                            .tracking(2)
+                        Spacer()
+                        Menu {
+                            Button("New Daily Ration") { showingAddGoal = true }
+                            Button("Chart a Journey") { showingJourneyPicker = true }
+                        } label: {
+                            Label("Supply Up", systemImage: "plus")
+                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(TrailColor.coral)
+                        .controlSize(.small)
+                    }
+
+                    // Active Goals
+                    if appState.goalManager.activeGoals.isEmpty {
+                        emptyState
+                    } else {
+                        ForEach(appState.goalManager.activeGoals) { goal in
+                            RetroGoalCard(goal: goal, appState: appState)
+                        }
+                    }
+
+                    // Inactive goals
+                    let inactive = appState.goalManager.goals.filter { !$0.isActive }
+                    if !inactive.isEmpty {
+                        Text("ABANDONED TRAILS")
+                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .foregroundStyle(TrailColor.text.opacity(0.5))
+                            .tracking(1)
+                            .padding(.top, 8)
+
+                        ForEach(inactive) { goal in
+                            RetroGoalCard(goal: goal, appState: appState)
+                                .opacity(0.6)
+                        }
                     }
                 }
-
-                // Inactive goals
-                let inactive = appState.goalManager.goals.filter { !$0.isActive }
-                if !inactive.isEmpty {
-                    Text("Inactive")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 8)
-
-                    ForEach(inactive) { goal in
-                        GoalCard(goal: goal, appState: appState)
-                            .opacity(0.6)
-                    }
-                }
+                .padding()
             }
-            .padding()
         }
-        .navigationTitle("Goals")
+        .navigationTitle("Provisions")
         .sheet(isPresented: $showingAddGoal) {
             AddGoalSheet(appState: appState)
         }
@@ -61,15 +69,14 @@ struct GoalsView: View {
     @ViewBuilder
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "target")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
-            Text("No active goals")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            Text("Set a daily distance goal or start a journey to track your progress.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            Text("\u{1F3AF}")
+                .font(.system(size: 36))
+            Text("No provisions packed")
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.6))
+            Text("Set a daily ration or chart a journey to track your progress on the trail.")
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.4))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -77,9 +84,9 @@ struct GoalsView: View {
     }
 }
 
-// MARK: - GoalCard
+// MARK: - Retro Goal Card
 
-struct GoalCard: View {
+struct RetroGoalCard: View {
     let goal: Goal
     let appState: AppState
 
@@ -95,42 +102,51 @@ struct GoalCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(goal.name)
-                        .font(.headline)
-                    Text("\(goal.timeframe.displayName) · \(goal.type.rawValue.capitalized)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundStyle(TrailColor.text)
+                    Text("\(goal.timeframe.displayName) \u{00B7} \(goal.type.rawValue.capitalized)")
+                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                        .foregroundStyle(TrailColor.text.opacity(0.5))
                 }
                 Spacer()
                 Text("\(progress.percentageInt)%")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundStyle(progress.percentage >= 1.0 ? .green : .primary)
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundStyle(progress.percentage >= 1.0 ? TrailColor.forestGreen : TrailColor.text)
             }
 
-            ProgressView(value: progress.percentage)
-                .tint(progress.percentage >= 1.0 ? .green : .blue)
+            RetroProgressBar(
+                progress: progress.percentage,
+                fillColor: progress.percentage >= 1.0 ? TrailColor.forestGreen : TrailColor.mountainBlue,
+                height: 14
+            )
 
             HStack {
                 Text("\(progress.formattedCurrent) / \(progress.formattedTarget) \(goal.unit.symbol)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 10, weight: .regular, design: .monospaced))
+                    .foregroundStyle(TrailColor.text.opacity(0.5))
                 Spacer()
-                Button(goal.isActive ? "Pause" : "Resume") {
+                Button(goal.isActive ? "Rest" : "Resume") {
                     appState.goalManager.toggleGoal(id: goal.id)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                Button("Delete") {
+                .buttonStyle(RetroSecondaryButtonStyle())
+                Button("Abandon") {
                     appState.goalManager.deleteGoal(id: goal.id)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .tint(.red)
+                .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
             }
         }
-        .padding()
-        .background(.background.secondary)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .retroPanel()
+    }
+}
+
+// MARK: - GoalCard compatibility wrapper
+
+struct GoalCard: View {
+    let goal: Goal
+    let appState: AppState
+
+    var body: some View {
+        RetroGoalCard(goal: goal, appState: appState)
     }
 }
 
@@ -140,7 +156,7 @@ struct AddGoalSheet: View {
     let appState: AppState
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name = "Daily Walking Goal"
+    @State private var name = "Daily Walking Ration"
     @State private var type: GoalType = .distance
     @State private var target: Double = 5.0
     @State private var timeframe: GoalTimeframe = .daily
@@ -150,57 +166,62 @@ struct AddGoalSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("New Goal")
-                .font(.title2)
-                .fontWeight(.bold)
+        ZStack {
+            TrailColor.parchment.ignoresSafeArea()
 
-            Form {
-                TextField("Name", text: $name)
+            VStack(spacing: 20) {
+                Text("NEW PROVISION")
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .foregroundStyle(TrailColor.text)
+                    .tracking(2)
 
-                Picker("Type", selection: $type) {
-                    ForEach(GoalType.allCases, id: \.self) { t in
-                        Text(t.rawValue.capitalized).tag(t)
+                Form {
+                    TextField("Name", text: $name)
+
+                    Picker("Type", selection: $type) {
+                        ForEach(GoalType.allCases, id: \.self) { t in
+                            Text(t.rawValue.capitalized).tag(t)
+                        }
+                    }
+
+                    Picker("Timeframe", selection: $timeframe) {
+                        ForEach(GoalTimeframe.allCases.filter { $0 != .custom }, id: \.self) { t in
+                            Text(t.displayName).tag(t)
+                        }
+                    }
+
+                    HStack {
+                        Text("Target")
+                        Spacer()
+                        TextField("", value: $target, format: .number)
+                            .frame(width: 80)
+                            .textFieldStyle(.roundedBorder)
+                        Text(unit.symbol)
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                Picker("Timeframe", selection: $timeframe) {
-                    ForEach(GoalTimeframe.allCases.filter { $0 != .custom }, id: \.self) { t in
-                        Text(t.displayName).tag(t)
-                    }
-                }
+                .formStyle(.grouped)
 
                 HStack {
-                    Text("Target")
+                    Button("Turn Back") { dismiss() }
+                        .buttonStyle(RetroSecondaryButtonStyle())
                     Spacer()
-                    TextField("", value: $target, format: .number)
-                        .frame(width: 80)
-                        .textFieldStyle(.roundedBorder)
-                    Text(unit.symbol)
-                        .foregroundStyle(.secondary)
+                    Button("Pack It") {
+                        let goal = Goal(
+                            name: name,
+                            type: type,
+                            target: target,
+                            unit: unit,
+                            timeframe: timeframe
+                        )
+                        appState.goalManager.addGoal(goal)
+                        dismiss()
+                    }
+                    .buttonStyle(RetroButtonStyle(tint: TrailColor.forestGreen))
                 }
             }
-            .formStyle(.grouped)
-
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .buttonStyle(.bordered)
-                Spacer()
-                Button("Create") {
-                    let goal = Goal(
-                        name: name,
-                        type: type,
-                        target: target,
-                        unit: unit,
-                        timeframe: timeframe
-                    )
-                    appState.goalManager.addGoal(goal)
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-            }
+            .padding()
         }
-        .padding()
         .frame(width: 400, height: 350)
     }
 }
@@ -213,67 +234,79 @@ struct JourneyPickerSheet: View {
     @State private var months: Int = 4
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Start a Journey")
-                .font(.title2)
-                .fontWeight(.bold)
+        ZStack {
+            TrailColor.parchment.ignoresSafeArea()
 
-            Text("Pick a real-world trail to walk on your treadmill. Track your progress over time.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 16) {
+                Text("CHART A JOURNEY")
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .foregroundStyle(TrailColor.text)
+                    .tracking(2)
 
-            ScrollView {
-                VStack(spacing: 8) {
-                    ForEach(JourneyPreset.allPresets) { preset in
-                        Button(action: {
-                            let goal = appState.goalManager.createJourneyGoal(
-                                from: preset,
-                                useMetric: appState.settings.useMetric,
-                                months: months
-                            )
-                            appState.goalManager.addGoal(goal)
-                            dismiss()
-                        }) {
-                            HStack {
-                                Text(preset.emoji)
-                                    .font(.title2)
-                                VStack(alignment: .leading) {
-                                    Text(preset.name)
-                                        .font(.headline)
-                                    Text("\(String(format: "%.0f", preset.distanceMiles)) mi · \(preset.description)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                Text("Pick a real-world trail to walk from your desk. Track your progress across the miles.")
+                    .font(.system(size: 11, weight: .regular, design: .monospaced))
+                    .foregroundStyle(TrailColor.text.opacity(0.6))
+                    .multilineTextAlignment(.center)
+
+                ScrollView {
+                    VStack(spacing: 8) {
+                        ForEach(JourneyPreset.allPresets) { preset in
+                            Button(action: {
+                                let goal = appState.goalManager.createJourneyGoal(
+                                    from: preset,
+                                    useMetric: appState.settings.useMetric,
+                                    months: months
+                                )
+                                appState.goalManager.addGoal(goal)
+                                dismiss()
+                            }) {
+                                HStack {
+                                    Text(preset.emoji)
+                                        .font(.title2)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(preset.name)
+                                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                            .foregroundStyle(TrailColor.text)
+                                        Text("\(String(format: "%.0f", preset.distanceMiles)) mi \u{00B7} \(preset.description)")
+                                            .font(.system(size: 10, weight: .regular, design: .monospaced))
+                                            .foregroundStyle(TrailColor.text.opacity(0.6))
+                                    }
+                                    Spacer()
+                                    Text("\u{25B6}")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundStyle(TrailColor.text.opacity(0.4))
                                 }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(.secondary)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
+                                .background(TrailColor.parchment.opacity(0.6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .strokeBorder(TrailColor.darkEarth.opacity(0.3), lineWidth: 1)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 3))
                             }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                            .background(.background.secondary)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
-            }
 
-            HStack {
-                Text("Complete in")
-                Picker("Months", selection: $months) {
-                    ForEach([2, 3, 4, 6, 8, 12], id: \.self) { m in
-                        Text("\(m) months").tag(m)
+                HStack {
+                    Text("Complete in")
+                        .font(.system(size: 11, weight: .regular, design: .monospaced))
+                        .foregroundStyle(TrailColor.text.opacity(0.7))
+                    Picker("Months", selection: $months) {
+                        ForEach([2, 3, 4, 6, 8, 12], id: \.self) { m in
+                            Text("\(m) months").tag(m)
+                        }
                     }
+                    .frame(width: 120)
                 }
-                .frame(width: 120)
-            }
-            .font(.caption)
 
-            Button("Cancel") { dismiss() }
-                .buttonStyle(.bordered)
+                Button("Turn Back") { dismiss() }
+                    .buttonStyle(RetroSecondaryButtonStyle())
+            }
+            .padding()
         }
-        .padding()
         .frame(width: 420, height: 480)
     }
 }

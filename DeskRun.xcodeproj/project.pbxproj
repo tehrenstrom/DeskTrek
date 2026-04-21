@@ -35,6 +35,9 @@
 		A10000010000000000000020 /* KingSmithAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* KingSmithAdapter.swift */; };
 		A10000010000000000000021 /* FTMSAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* FTMSAdapter.swift */; };
 		A10000010000000000000022 /* FitShowAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000022 /* FitShowAdapter.swift */; };
+		A10000010000000000000030 /* RetroTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* RetroTheme.swift */; };
+		A10000010000000000000031 /* TrailMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* TrailMessages.swift */; };
+		A10000010000000000000032 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000032 /* SoundManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +72,9 @@
 		A20000010000000000000020 /* KingSmithAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KingSmithAdapter.swift; sourceTree = "<group>"; };
 		A20000010000000000000021 /* FTMSAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FTMSAdapter.swift; sourceTree = "<group>"; };
 		A20000010000000000000022 /* FitShowAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitShowAdapter.swift; sourceTree = "<group>"; };
+		A20000010000000000000030 /* RetroTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetroTheme.swift; sourceTree = "<group>"; };
+		A20000010000000000000031 /* TrailMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrailMessages.swift; sourceTree = "<group>"; };
+		A20000010000000000000032 /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,9 +105,18 @@
 				A40000010000000000000003 /* Models */,
 				A40000010000000000000004 /* BLE */,
 				A40000010000000000000005 /* Views */,
+				A40000010000000000000008 /* Audio */,
 				A20000010000000000000009 /* Assets.xcassets */,
 			);
 			path = DeskRun;
+			sourceTree = "<group>";
+		};
+		A40000010000000000000008 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000032 /* SoundManager.swift */,
+			);
+			path = Audio;
 			sourceTree = "<group>";
 		};
 		A40000010000000000000003 /* Models */ = {
@@ -118,6 +133,7 @@
 				A20000010000000000000017 /* WorkoutRecorder.swift */,
 				A20000010000000000000018 /* NotificationManager.swift */,
 				A20000010000000000000019 /* AppState.swift */,
+				A20000010000000000000031 /* TrailMessages.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -155,6 +171,7 @@
 				A2000001000000000000001A /* GoalsView.swift */,
 				A2000001000000000000001B /* HistoryView.swift */,
 				A2000001000000000000001C /* SettingsView.swift */,
+				A20000010000000000000030 /* RetroTheme.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -263,6 +280,9 @@
 				A10000010000000000000020 /* KingSmithAdapter.swift in Sources */,
 				A10000010000000000000021 /* FTMSAdapter.swift in Sources */,
 				A10000010000000000000022 /* FitShowAdapter.swift in Sources */,
+				A10000010000000000000030 /* RetroTheme.swift in Sources */,
+				A10000010000000000000031 /* TrailMessages.swift in Sources */,
+				A10000010000000000000032 /* SoundManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

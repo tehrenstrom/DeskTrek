@@ -8,50 +8,58 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        Group {
-            if groupedWorkouts.isEmpty {
-                emptyState
-            } else {
-                List {
-                    ForEach(groupedWorkouts, id: \.date) { group in
-                        Section {
-                            ForEach(group.workouts) { workout in
-                                WorkoutRow(workout: workout, settings: appState.settings)
-                            }
-                            .onDelete { indexSet in
-                                for index in indexSet {
-                                    appState.workoutStore.deleteWorkout(id: group.workouts[index].id)
+        ZStack {
+            RetroBackground()
+
+            Group {
+                if groupedWorkouts.isEmpty {
+                    emptyState
+                } else {
+                    List {
+                        ForEach(groupedWorkouts, id: \.date) { group in
+                            Section {
+                                ForEach(group.workouts) { workout in
+                                    TrailJournalRow(workout: workout, settings: appState.settings)
+                                        .listRowBackground(TrailColor.parchment.opacity(0.5))
                                 }
-                            }
-                        } header: {
-                            HStack {
-                                Text(group.date, style: .date)
-                                Spacer()
-                                let dayTotal = group.workouts.reduce(0.0) { $0 + $1.distance }
-                                Text(appState.settings.distanceString(dayTotal))
-                                    .foregroundStyle(.secondary)
+                                .onDelete { indexSet in
+                                    for index in indexSet {
+                                        appState.workoutStore.deleteWorkout(id: group.workouts[index].id)
+                                    }
+                                }
+                            } header: {
+                                HStack {
+                                    Text(group.date, style: .date)
+                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                        .foregroundStyle(TrailColor.text)
+                                    Spacer()
+                                    let dayTotal = group.workouts.reduce(0.0) { $0 + $1.distance }
+                                    Text(appState.settings.distanceString(dayTotal))
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundStyle(TrailColor.text.opacity(0.6))
+                                }
                             }
                         }
                     }
+                    .listStyle(.inset(alternatesRowBackgrounds: true))
+                    .scrollContentBackground(.hidden)
                 }
-                .listStyle(.inset(alternatesRowBackgrounds: true))
             }
         }
-        .navigationTitle("History")
+        .navigationTitle("Trail Journal")
     }
 
     @ViewBuilder
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "clock.arrow.circlepath")
+            Text("\u{1F4D6}")
                 .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-            Text("No workouts yet")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            Text("Your walking sessions will appear here automatically when your treadmill is connected.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            Text("The journal is empty")
+                .font(.system(size: 15, weight: .bold, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.6))
+            Text("Your trail entries will appear here when your wagon is hitched and rolling.")
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.4))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 300)
         }
@@ -59,9 +67,9 @@ struct HistoryView: View {
     }
 }
 
-// MARK: - Workout Row
+// MARK: - Trail Journal Row
 
-struct WorkoutRow: View {
+struct TrailJournalRow: View {
     let workout: WorkoutRecord
     let settings: AppSettings
 
@@ -69,32 +77,45 @@ struct WorkoutRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(workout.startDate, style: .time)
-                    .font(.headline)
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundStyle(TrailColor.text)
                 Text(workout.formattedDuration)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 10, weight: .regular, design: .monospaced))
+                    .foregroundStyle(TrailColor.text.opacity(0.5))
             }
 
             Spacer()
 
-            HStack(spacing: 16) {
-                statLabel(settings.distanceString(workout.distance), icon: "map")
-                statLabel("\(workout.steps)", icon: "shoeprints.fill")
-                statLabel(String(format: "%.1f km/h", workout.averageSpeed), icon: "speedometer")
-                statLabel("\(workout.calories) kcal", icon: "flame")
+            HStack(spacing: 14) {
+                journalStat(settings.distanceString(workout.distance), icon: "map")
+                journalStat("\(workout.steps)", icon: "shoeprints.fill")
+                journalStat(String(format: "%.1f km/h", workout.averageSpeed), icon: "speedometer")
+                journalStat("\(workout.calories) kcal", icon: "flame")
             }
-            .font(.caption)
         }
         .padding(.vertical, 4)
     }
 
-    private func statLabel(_ value: String, icon: String) -> some View {
+    private func journalStat(_ value: String, icon: String) -> some View {
         HStack(spacing: 3) {
             Image(systemName: icon)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 10))
+                .foregroundStyle(TrailColor.text.opacity(0.4))
                 .frame(width: 14)
             Text(value)
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.7))
                 .monospacedDigit()
         }
+    }
+}
+
+// Keep WorkoutRow for MenuBarView compatibility
+struct WorkoutRow: View {
+    let workout: WorkoutRecord
+    let settings: AppSettings
+
+    var body: some View {
+        TrailJournalRow(workout: workout, settings: settings)
     }
 }

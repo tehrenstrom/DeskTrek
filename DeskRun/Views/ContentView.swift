@@ -1,11 +1,11 @@
 import SwiftUI
 
 enum SidebarItem: String, Hashable, CaseIterable {
-    case dashboard = "Dashboard"
-    case connection = "Connection"
-    case goals = "Goals"
-    case history = "History"
-    case settings = "Settings"
+    case dashboard = "Trail Status"
+    case connection = "Outfitter"
+    case goals = "Provisions"
+    case history = "Journal"
+    case settings = "Camp"
 }
 
 struct ContentView: View {
@@ -51,15 +51,20 @@ struct ContentView: View {
     private func sidebarLabel(for item: SidebarItem) -> some View {
         switch item {
         case .dashboard:
-            Label("Dashboard", systemImage: "gauge.with.dots.needle.33percent")
+            Label("Trail Status", systemImage: "gauge.with.dots.needle.33percent")
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .connection:
-            Label("Connection", systemImage: "antenna.radiowaves.left.and.right")
+            Label("Outfitter", systemImage: "antenna.radiowaves.left.and.right")
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .goals:
-            Label("Goals", systemImage: "target")
+            Label("Provisions", systemImage: "target")
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .history:
-            Label("History", systemImage: "clock.arrow.circlepath")
+            Label("Journal", systemImage: "book.closed")
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .settings:
-            Label("Settings", systemImage: "gear")
+            Label("Camp", systemImage: "tent")
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
         }
     }
 }

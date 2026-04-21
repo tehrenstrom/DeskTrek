@@ -43,6 +43,10 @@ class AppState {
             settings: settings
         )
 
+        // Give workout recorder access to goal manager for achievement sounds
+        self.workoutRecorder.goalManager = goalManager
+        self.workoutRecorder.settings = settings
+
         // Wire up auto-recording
         self.bleManager.onStateUpdate = { [weak workoutRecorder] in
             workoutRecorder?.handleStateUpdate()

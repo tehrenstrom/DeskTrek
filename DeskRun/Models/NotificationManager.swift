@@ -149,6 +149,9 @@ class DeskRunNotificationManager {
         guard settings.notificationsEnabled && settings.milestoneAlerts else { return }
         guard canSendNotification() else { return }
 
+        // Play 8-bit milestone sound
+        SoundManager.shared.playMilestoneReached()
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body

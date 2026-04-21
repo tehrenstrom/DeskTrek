@@ -5,6 +5,8 @@ import Observation
 class WorkoutRecorder {
     private let treadmillState: TreadmillState
     private let workoutStore: WorkoutStore
+    var goalManager: GoalManager?
+    var settings: AppSettings?
 
     var isRecording: Bool = false
     var showSavedToast: Bool = false
@@ -46,6 +48,7 @@ class WorkoutRecorder {
         guard !isRecording else { return }
         isRecording = true
         currentWorkoutStart = Date()
+        SoundManager.shared.playWorkoutStarted()
         print("🏃 Workout recording started")
     }
 
@@ -70,7 +73,13 @@ class WorkoutRecorder {
         // Only save if meaningful (at least 1 minute or 0.01 km)
         if workout.duration >= 60 || workout.distance >= 0.01 {
             workoutStore.addWorkout(workout)
+            SoundManager.shared.playWorkoutEnded()
             print("💾 Workout saved: \(workout.formattedDistance) in \(workout.formattedDuration)")
+
+            // Check if daily goal was just hit
+            if let gm = goalManager, let s = settings {
+                gm.checkGoalAchievement(workouts: workoutStore.todaysWorkouts, settings: s)
+            }
 
             // Show toast
             showSavedToast = true

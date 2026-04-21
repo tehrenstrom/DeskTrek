@@ -7,8 +7,10 @@ import CoreBluetooth
 /// - Service UUID: FE00
 /// - Write characteristic: FE01
 /// - Notify characteristic: FE02
-/// - Packets framed with 0xF7 (start) … 0xFD (end)
-/// - Checksum: XOR of all bytes between start and end markers (exclusive)
+/// - Packets framed with 0xF7 (commands) or 0xF8 (status notifications) … 0xFD (end)
+/// - Command checksum: additive — sum(payload) % 256
+/// - Status checksum: XOR of payload bytes
+/// - Control packets use 6-byte A2 key/value format
 struct KingSmithAdapter: TreadmillAdapter {
 
     // MARK: - Static Identity & Matching
@@ -40,7 +42,8 @@ struct KingSmithAdapter: TreadmillAdapter {
 
     // MARK: - Protocol Constants
 
-    private let startMarker: UInt8 = 0xF7
+    private let commandStartMarker: UInt8 = 0xF7
+    private let statusStartMarker: UInt8 = 0xF8
     private let endMarker: UInt8 = 0xFD
 
     /// Command categories
@@ -48,6 +51,12 @@ struct KingSmithAdapter: TreadmillAdapter {
         case treadmillControl = 0xA2
         case queryStatus     = 0xA6
         case settings        = 0xA7
+    }
+
+    /// Control keys for 6-byte A2 key/value commands
+    private enum ControlKey: UInt8 {
+        case startBelt  = 0x01  // value: 1 = start, 0 = stop
+        case setSpeed   = 0x02  // value: speed in 0.1 km/h
     }
 
     /// State byte values in notifications
@@ -61,21 +70,26 @@ struct KingSmithAdapter: TreadmillAdapter {
 
     func buildStartCommand(speed: Double) -> Data {
         let speedByte = speedToRaw(speed)
-        return buildControlPacket(running: true, speed: speedByte)
+        // Send start command, then set speed
+        var packet = buildControlPacket(key: .startBelt, value: 0x01)
+        if speedByte > 0 {
+            packet.append(contentsOf: buildControlPacket(key: .setSpeed, value: speedByte))
+        }
+        return packet
     }
 
     func buildStopCommand() -> Data {
-        return buildControlPacket(running: false, speed: 0)
+        return buildControlPacket(key: .startBelt, value: 0x00)
     }
 
     func buildPauseCommand() -> Data {
-        // WalkingPad has no distinct pause — sending stop with speed 0 pauses the belt.
+        // WalkingPad has no distinct pause — sending stop pauses the belt.
         return buildStopCommand()
     }
 
     func buildSetSpeedCommand(speed: Double) -> Data {
         let speedByte = speedToRaw(speed)
-        return buildControlPacket(running: true, speed: speedByte)
+        return buildControlPacket(key: .setSpeed, value: speedByte)
     }
 
     // MARK: - Notification Parser
@@ -84,10 +98,10 @@ struct KingSmithAdapter: TreadmillAdapter {
         var status = TreadmillStatus()
         let bytes = [UInt8](data)
 
-        // Minimum viable status packet: start + category + state + speed + mode +
-        // time_min + time_sec + dist_hi + dist_lo + steps_hi + steps_lo + checksum + end = 13
+        // Status packets are framed with 0xF8 (not 0xF7 which is for commands).
+        // Accept both 0xF7 and 0xF8 start markers for robustness.
         guard bytes.count >= 13,
-              bytes.first == startMarker,
+              (bytes.first == statusStartMarker || bytes.first == commandStartMarker),
               bytes.last == endMarker else {
             return status
         }
@@ -99,10 +113,10 @@ struct KingSmithAdapter: TreadmillAdapter {
         for b in payload { computed ^= b }
         guard computed == expectedChecksum else { return status }
 
-        // Parse fields (offsets relative to full packet)
-        // [0]=0xF7, [1]=0xA2, [2]=state, [3]=speed, [4]=mode,
-        // [5]=time_min, [6]=time_sec, [7]=dist_hi, [8]=dist_lo,
-        // [9]=steps_hi, [10]=steps_lo, …, [n-2]=checksum, [n-1]=0xFD
+        // Parse A2 status fields
+        // [0]=start, [1]=0xA2, [2]=state, [3]=speed, [4]=mode,
+        // [5..7]=time (3-byte BE), [8..10]=distance (3-byte BE),
+        // [11..13]=steps (3-byte BE), …, [n-2]=checksum, [n-1]=0xFD
         guard bytes[1] == Category.treadmillControl.rawValue else { return status }
 
         let state = bytes[2]
@@ -111,18 +125,23 @@ struct KingSmithAdapter: TreadmillAdapter {
         // Speed in 0.1 km/h units
         status.speed = Double(bytes[3]) / 10.0
 
-        // Duration: minutes + seconds
-        let minutes = Int(bytes[5])
-        let seconds = Int(bytes[6])
-        status.duration = TimeInterval(minutes * 60 + seconds)
+        // Duration: 3-byte big-endian counter (total seconds)
+        if bytes.count >= 8 {
+            let rawTime = (UInt32(bytes[5]) << 16) | (UInt32(bytes[6]) << 8) | UInt32(bytes[7])
+            status.duration = TimeInterval(rawTime)
+        }
 
-        // Distance: uint16 in 10 m units → km
-        let rawDistance = (UInt16(bytes[7]) << 8) | UInt16(bytes[8])
-        status.distance = Double(rawDistance) * 10.0 / 1000.0  // 10 m → km
+        // Distance: 3-byte big-endian counter (in 10 m units → km)
+        if bytes.count >= 11 {
+            let rawDistance = (UInt32(bytes[8]) << 16) | (UInt32(bytes[9]) << 8) | UInt32(bytes[10])
+            status.distance = Double(rawDistance) * 10.0 / 1000.0  // 10 m → km
+        }
 
-        // Steps: uint16
-        let rawSteps = (UInt16(bytes[9]) << 8) | UInt16(bytes[10])
-        status.steps = Int(rawSteps)
+        // Steps: 3-byte big-endian counter
+        if bytes.count >= 14 {
+            let rawSteps = (UInt32(bytes[11]) << 16) | (UInt32(bytes[12]) << 8) | UInt32(bytes[13])
+            status.steps = Int(rawSteps)
+        }
 
         // WalkingPad doesn't report calories in the base notification;
         // leave at default 0.
@@ -137,18 +156,17 @@ struct KingSmithAdapter: TreadmillAdapter {
         return UInt8(clamping: Int(round(kmh * 10)))
     }
 
-    /// Build a treadmill-control packet:
-    /// `[0xF7, 0xA2, 0x01, runFlag, speed, checksum, 0xFD]`
-    private func buildControlPacket(running: Bool, speed: UInt8) -> Data {
-        let runFlag: UInt8 = running ? 0x01 : 0x00
+    /// Build a 6-byte A2 key/value control packet with additive checksum:
+    /// `[0xF7, 0xA2, key, value, checksum, 0xFD]`
+    /// Checksum = sum of bytes between start and end markers (exclusive), mod 256.
+    private func buildControlPacket(key: ControlKey, value: UInt8) -> Data {
         let payload: [UInt8] = [
             Category.treadmillControl.rawValue,  // 0xA2
-            0x01,                                 // sub-command: belt control
-            runFlag,
-            speed
+            key.rawValue,
+            value
         ]
-        let checksum = payload.reduce(UInt8(0), ^)
-        var packet: [UInt8] = [startMarker]
+        let checksum = UInt8(payload.reduce(0) { ($0 + UInt16($1)) } % 256)
+        var packet: [UInt8] = [commandStartMarker]
         packet.append(contentsOf: payload)
         packet.append(checksum)
         packet.append(endMarker)

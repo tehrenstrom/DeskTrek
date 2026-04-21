@@ -10,6 +10,11 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
     /// The adapter for the currently connected (or connecting) treadmill.
     private var activeAdapter: (any TreadmillAdapter)?
 
+    /// Cache of advertisement data from discovery, keyed by peripheral identifier.
+    /// Persisted so that didConnect can re-match using the full original payload
+    /// (including manufacturer data, service UUIDs, etc.) instead of synthetic data.
+    private var discoveryAdvertisementData: [UUID: [String: Any]] = [:]
+
     private let state: TreadmillState
     var onStateUpdate: (() -> Void)?
 
@@ -157,6 +162,8 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
         // Ask the registry which adapter matches this peripheral
         if let adapter = TreadmillAdapterRegistry.shared.findAdapter(for: peripheral, advertisementData: advertisementData) {
             let brand = type(of: adapter).displayName
+            // Cache the full advertisement data so didConnect can re-match accurately
+            discoveryAdvertisementData[peripheral.identifier] = advertisementData
             if !discoveredDevices.contains(where: { $0.peripheral.identifier == peripheral.identifier }) {
                 discoveredDevices.append((peripheral: peripheral, name: name, brand: brand, rssi: RSSI.intValue))
                 print("✅ [BLE] Discovered \(brand) device: \(name) (RSSI: \(RSSI))")
@@ -169,18 +176,21 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
         state.connectionStatus = .connected
         state.errorMessage = nil
 
-        // Look up the adapter for this peripheral from our discovered list,
-        // or re-match from the registry.
-        if activeAdapter == nil {
-            // Re-match — we don't have advertisementData here, but we stored the brand.
-            // Find the adapter type by matching from the discovered devices list.
-            if let device = discoveredDevices.first(where: { $0.peripheral.identifier == peripheral.identifier }) {
-                // Re-create the adapter by asking the registry (with minimal ad data)
-                activeAdapter = TreadmillAdapterRegistry.shared.findAdapter(
-                    for: peripheral,
-                    advertisementData: [CBAdvertisementDataLocalNameKey: device.name]
-                )
-            }
+        // Always re-match the adapter for the connected peripheral so that
+        // switching devices doesn't reuse a stale adapter with wrong UUIDs.
+        // Use the full advertisement data cached during discovery so adapters
+        // that rely on manufacturer/service data can match correctly.
+        if let cachedAdData = discoveryAdvertisementData[peripheral.identifier] {
+            activeAdapter = TreadmillAdapterRegistry.shared.findAdapter(
+                for: peripheral,
+                advertisementData: cachedAdData
+            )
+        } else if let device = discoveredDevices.first(where: { $0.peripheral.identifier == peripheral.identifier }) {
+            // Fallback: use device name if cached ad data is unavailable
+            activeAdapter = TreadmillAdapterRegistry.shared.findAdapter(
+                for: peripheral,
+                advertisementData: [CBAdvertisementDataLocalNameKey: device.name]
+            )
         }
 
         guard let adapter = activeAdapter else {

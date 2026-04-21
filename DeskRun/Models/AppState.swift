@@ -24,7 +24,6 @@ class AppState {
         // Register all known treadmill adapters before creating the BLE manager.
         // Add new adapters here as they are implemented.
         TreadmillAdapterRegistry.shared.register(PitPatAdapter.self)
-        TreadmillAdapterRegistry.shared.register(FTMSAdapter.self)
         TreadmillAdapterRegistry.shared.register(FitShowAdapter.self)
 
         self.treadmillState = treadmillState

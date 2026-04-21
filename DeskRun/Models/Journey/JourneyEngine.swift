@@ -1,0 +1,312 @@
+import AppKit
+import Foundation
+import Observation
+
+struct ActiveEncounter: Identifiable, Equatable {
+    let id = UUID()
+    let event: EncounterEvent
+    let startedAt: Date
+
+    var deadline: Date {
+        startedAt.addingTimeInterval(event.timeoutSeconds)
+    }
+
+    static func == (lhs: ActiveEncounter, rhs: ActiveEncounter) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+struct LandmarkNotice: Identifiable, Equatable {
+    let id = UUID()
+    let landmark: Landmark
+    let shownAt: Date = Date()
+}
+
+@Observable
+final class JourneyEngine {
+    private let treadmillState: TreadmillState
+    private let store: JourneyStore
+
+    private(set) var currentTrail: Trail?
+
+    // Presentation surfaces — views bind to these.
+    var pendingEncounter: ActiveEncounter?
+    var pendingLandmark: LandmarkNotice?
+    var lastResultText: String?
+    var showCompletion: Bool = false
+
+    private var pendingEncounterQueue: [EncounterEvent] = []
+    private var timeoutTask: Task<Void, Never>?
+    private var persistDebounceTask: Task<Void, Never>?
+    private var sleepObserver: NSObjectProtocol?
+
+    init(treadmillState: TreadmillState, store: JourneyStore) {
+        self.treadmillState = treadmillState
+        self.store = store
+        if let active = store.active {
+            self.currentTrail = TrailCatalog.trail(for: active.trailID)
+        }
+        registerSleepWakeObserver()
+    }
+
+    deinit {
+        if let obs = sleepObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(obs)
+        }
+        timeoutTask?.cancel()
+        persistDebounceTask?.cancel()
+    }
+
+    // MARK: - Lifecycle
+
+    func start(trail: Trail, targetDate: Date?) {
+        // Abandon any prior active journey.
+        if var existing = store.active {
+            existing.status = .abandoned
+            store.appendToHistory(existing)
+            store.clearActive()
+        }
+        let baselineKm = treadmillState.distance
+        let state = JourneyState(
+            trailID: trail.id,
+            startedAt: Date(),
+            milesTraveled: 0,
+            morale: 75,
+            energy: 100,
+            status: .active,
+            targetCompletionDate: targetDate,
+            baselineTreadmillKm: baselineKm,
+            lastSeenTreadmillKm: baselineKm
+        )
+        currentTrail = trail
+        store.saveActive(state)
+    }
+
+    func abandon() {
+        guard var state = store.active else { return }
+        state.status = .abandoned
+        store.appendToHistory(state)
+        store.clearActive()
+        currentTrail = nil
+        pendingEncounter = nil
+        pendingLandmark = nil
+        pendingEncounterQueue.removeAll()
+        timeoutTask?.cancel()
+        timeoutTask = nil
+    }
+
+    // MARK: - Tick (fires on every BLE update)
+
+    func handleTick() {
+        guard var state = store.active, state.status == .active,
+              let trail = currentTrail ?? TrailCatalog.trail(for: state.trailID)
+        else { return }
+
+        let currentKm = treadmillState.distance
+        self.currentTrail = trail
+
+        // If tracking is paused (user is doing a free walk), keep the baseline rolling
+        // so when they resume only NEW miles accumulate — nothing from the paused window.
+        guard state.isTrackingEnabled else {
+            state.baselineTreadmillKm = currentKm - (state.milesTraveled * 1.60934)
+            state.lastSeenTreadmillKm = currentKm
+            store.saveActive(state)
+            return
+        }
+
+        var deltaKm = currentKm - state.lastSeenTreadmillKm
+        if deltaKm < 0 {
+            // Odometer reset — rebase baseline, no forward progress this tick.
+            state.baselineTreadmillKm = currentKm - (state.milesTraveled * 1.60934)
+            deltaKm = 0
+        }
+        let previousMiles = state.milesTraveled
+        let deltaMiles = deltaKm * 0.621371
+        state.milesTraveled = min(trail.totalMiles, state.milesTraveled + deltaMiles)
+        state.lastSeenTreadmillKm = currentKm
+
+        if deltaMiles > 0 {
+            emitEvents(in: previousMiles...state.milesTraveled, state: &state, trail: trail)
+        }
+
+        store.saveActive(state)
+
+        if state.milesTraveled >= trail.totalMiles {
+            completeJourney()
+        } else {
+            schedulePersist()
+        }
+    }
+
+    // MARK: - Tracking toggle
+
+    var isTrackingEnabled: Bool {
+        store.active?.isTrackingEnabled ?? true
+    }
+
+    func setTrackingEnabled(_ enabled: Bool) {
+        guard var state = store.active else { return }
+        state.isTrackingEnabled = enabled
+        // Always refresh the baseline when flipping, so neither direction sneaks in miles.
+        state.baselineTreadmillKm = treadmillState.distance - (state.milesTraveled * 1.60934)
+        state.lastSeenTreadmillKm = treadmillState.distance
+        store.saveActive(state)
+    }
+
+    private func emitEvents(in range: ClosedRange<Double>, state: inout JourneyState, trail: Trail) {
+        // Landmarks
+        for landmark in trail.landmarks where landmark.mileMarker > range.lowerBound && landmark.mileMarker <= range.upperBound {
+            if state.visitedLandmarkIDs.insert(landmark.id).inserted {
+                pendingLandmark = LandmarkNotice(landmark: landmark)
+                SoundManager.shared.playGoalAchieved()
+            }
+        }
+
+        // Encounters — persist fired IDs before showing, to avoid double-fire on crash
+        for event in trail.encounters where event.triggerMile > range.lowerBound && event.triggerMile <= range.upperBound {
+            guard !state.firedEncounterIDs.contains(event.id) else { continue }
+            state.firedEncounterIDs.insert(event.id)
+            if pendingEncounter == nil {
+                presentEncounter(event)
+            } else {
+                pendingEncounterQueue.append(event)
+            }
+        }
+    }
+
+    // MARK: - Encounters
+
+    private func presentEncounter(_ event: EncounterEvent) {
+        let active = ActiveEncounter(event: event, startedAt: Date())
+        pendingEncounter = active
+        SoundManager.shared.playWorkoutStarted()
+        scheduleTimeout(for: active)
+    }
+
+    private func scheduleTimeout(for encounter: ActiveEncounter) {
+        timeoutTask?.cancel()
+        timeoutTask = Task { @MainActor [weak self] in
+            let nanos = UInt64(encounter.event.timeoutSeconds * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: nanos)
+            if Task.isCancelled { return }
+            guard let self, let current = self.pendingEncounter, current.id == encounter.id else { return }
+            self.resolve(choiceID: current.event.defaultChoiceID, wasDefault: true)
+        }
+    }
+
+    func resolve(choiceID: String, wasDefault: Bool) {
+        guard let active = pendingEncounter,
+              let choice = active.event.choices.first(where: { $0.id == choiceID }) ?? active.event.choices.first,
+              var state = store.active
+        else { return }
+
+        timeoutTask?.cancel()
+        timeoutTask = nil
+
+        state.morale = max(0, min(100, state.morale + choice.moraleDelta))
+        state.energy = max(0, min(100, state.energy + choice.energyDelta))
+
+        if let badgeID = choice.badgeAwarded {
+            state.earnedBadgeIDs.insert(badgeID)
+            store.addEarnedBadges([badgeID])
+        }
+
+        state.choices.append(JourneyChoice(
+            encounterID: active.event.id,
+            choiceID: choice.id,
+            decidedAt: Date(),
+            wasDefault: wasDefault,
+            milesAtDecision: state.milesTraveled
+        ))
+
+        // Subquest progression
+        if let subquestID = active.event.subquestID,
+           let trail = currentTrail,
+           let subquest = trail.subquests.first(where: { $0.id == subquestID }),
+           let stageIndex = subquest.stageEncounterIDs.firstIndex(of: active.event.id) {
+            let nextIndex = stageIndex + 1
+            state.subquestProgress[subquestID] = nextIndex
+            if nextIndex >= subquest.stageEncounterIDs.count,
+               let completionBadge = subquest.completionBadgeID {
+                state.earnedBadgeIDs.insert(completionBadge)
+                store.addEarnedBadges([completionBadge])
+            }
+        }
+
+        lastResultText = choice.resultText
+        store.saveActive(state)
+
+        // Clear and present next in queue if any
+        pendingEncounter = nil
+        if let next = pendingEncounterQueue.first {
+            pendingEncounterQueue.removeFirst()
+            presentEncounter(next)
+        }
+    }
+
+    func dismissLandmarkNotice() {
+        pendingLandmark = nil
+    }
+
+    func dismissResultText() {
+        lastResultText = nil
+    }
+
+    // MARK: - Completion
+
+    private func completeJourney() {
+        guard var state = store.active, let trail = currentTrail else { return }
+        state.status = .completed
+        state.completedAt = Date()
+        let totalDays = max(1, Calendar.current.dateComponents([.day], from: state.startedAt, to: state.completedAt ?? Date()).day ?? 1)
+        let certificate = Certificate(
+            trailID: trail.id,
+            journeyID: state.id,
+            completedAt: state.completedAt ?? Date(),
+            totalMiles: trail.totalMiles,
+            totalDays: totalDays,
+            finalMorale: state.morale,
+            earnedBadgeIDs: Array(state.earnedBadgeIDs)
+        )
+        store.appendTrophy(certificate)
+        store.appendToHistory(state)
+        store.clearActive()
+        currentTrail = nil
+        pendingEncounter = nil
+        pendingEncounterQueue.removeAll()
+        showCompletion = true
+        SoundManager.shared.playGoalAchieved()
+    }
+
+    // MARK: - Persistence debounce
+
+    private func schedulePersist() {
+        persistDebounceTask?.cancel()
+        persistDebounceTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            if Task.isCancelled { return }
+            guard let self, let active = self.store.active else { return }
+            self.store.saveActive(active)
+        }
+    }
+
+    // MARK: - Sleep / wake
+
+    private func registerSleepWakeObserver() {
+        let nc = NSWorkspace.shared.notificationCenter
+        sleepObserver = nc.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleWake()
+        }
+    }
+
+    private func handleWake() {
+        guard let active = pendingEncounter else { return }
+        if Date() >= active.deadline {
+            resolve(choiceID: active.event.defaultChoiceID, wasDefault: true)
+        }
+    }
+}

@@ -64,6 +64,7 @@ struct Goal: Codable, Identifiable {
     var startDate: Date
     var endDate: Date?
     var isActive: Bool
+    var mode: AppMode
 
     init(
         id: UUID = UUID(),
@@ -74,7 +75,8 @@ struct Goal: Codable, Identifiable {
         timeframe: GoalTimeframe,
         startDate: Date = Date(),
         endDate: Date? = nil,
-        isActive: Bool = true
+        isActive: Bool = true,
+        mode: AppMode = .freeWalk
     ) {
         self.id = id
         self.name = name
@@ -85,52 +87,37 @@ struct Goal: Codable, Identifiable {
         self.startDate = startDate
         self.endDate = endDate
         self.isActive = isActive
+        self.mode = mode
+    }
+
+    // Decode with default `.freeWalk` so legacy goals without the field still load.
+    enum CodingKeys: String, CodingKey {
+        case id, name, type, target, unit, timeframe, startDate, endDate, isActive, mode
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        type = try c.decode(GoalType.self, forKey: .type)
+        target = try c.decode(Double.self, forKey: .target)
+        unit = try c.decode(GoalUnit.self, forKey: .unit)
+        timeframe = try c.decode(GoalTimeframe.self, forKey: .timeframe)
+        startDate = try c.decode(Date.self, forKey: .startDate)
+        endDate = try c.decodeIfPresent(Date.self, forKey: .endDate)
+        isActive = try c.decode(Bool.self, forKey: .isActive)
+        mode = try c.decodeIfPresent(AppMode.self, forKey: .mode) ?? .freeWalk
     }
 }
 
-// MARK: - Journey Presets
+// MARK: - Legacy journey preset names (used only for one-time migration detection)
 
-struct JourneyPreset: Identifiable {
-    let id = UUID()
-    let name: String
-    let distanceMiles: Double
-    let description: String
-    let emoji: String
-
-    var distanceKm: Double { distanceMiles * 1.60934 }
-}
-
-extension JourneyPreset {
-    static let allPresets: [JourneyPreset] = [
-        JourneyPreset(
-            name: "Camino de Santiago",
-            distanceMiles: 500,
-            description: "The classic Spanish pilgrimage route",
-            emoji: "🇪🇸"
-        ),
-        JourneyPreset(
-            name: "Appalachian Trail",
-            distanceMiles: 2190,
-            description: "Georgia to Maine through the eastern US",
-            emoji: "🏔️"
-        ),
-        JourneyPreset(
-            name: "Pacific Crest Trail",
-            distanceMiles: 2650,
-            description: "Mexico to Canada along the western mountains",
-            emoji: "🌲"
-        ),
-        JourneyPreset(
-            name: "Walk Across America",
-            distanceMiles: 2800,
-            description: "Coast to coast across the United States",
-            emoji: "🇺🇸"
-        ),
-        JourneyPreset(
-            name: "Around the World",
-            distanceMiles: 24901,
-            description: "The circumference of Earth at the equator",
-            emoji: "🌍"
-        ),
+enum LegacyJourneyPresetNames {
+    static let all: Set<String> = [
+        "Camino de Santiago",
+        "Appalachian Trail",
+        "Pacific Crest Trail",
+        "Walk Across America",
+        "Around the World"
     ]
 }

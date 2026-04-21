@@ -11,15 +11,19 @@ class AppState {
     let statsCalculator: StatsCalculator
     let workoutRecorder: WorkoutRecorder
     let notificationManager: DeskRunNotificationManager
+    let journeyStore: JourneyStore
+    let journeyEngine: JourneyEngine
     var settings: AppSettings
 
     init() {
         let treadmillState = TreadmillState()
         let dataManager = DataManager()
-        let settings = dataManager.loadSettings()
+        var settings = dataManager.loadSettings()
         let workoutStore = WorkoutStore(dataManager: dataManager)
         let goalManager = GoalManager(dataManager: dataManager)
         let statsCalculator = StatsCalculator(workoutStore: workoutStore)
+        let journeyStore = JourneyStore(dataManager: dataManager)
+        let journeyEngine = JourneyEngine(treadmillState: treadmillState, store: journeyStore)
 
         // Register all known treadmill adapters before creating the BLE manager.
         // Add new adapters here as they are implemented.
@@ -31,11 +35,12 @@ class AppState {
         self.treadmillState = treadmillState
         self.bleManager = TreadmillBLEManager(state: treadmillState)
         self.dataManager = dataManager
-        self.settings = settings
         self.workoutStore = workoutStore
         self.goalManager = goalManager
         self.statsCalculator = statsCalculator
         self.workoutRecorder = WorkoutRecorder(treadmillState: treadmillState, workoutStore: workoutStore)
+        self.journeyStore = journeyStore
+        self.journeyEngine = journeyEngine
         self.notificationManager = DeskRunNotificationManager(
             workoutStore: workoutStore,
             goalManager: goalManager,
@@ -47,9 +52,18 @@ class AppState {
         self.workoutRecorder.goalManager = goalManager
         self.workoutRecorder.settings = settings
 
-        // Wire up auto-recording
-        self.bleManager.onStateUpdate = { [weak workoutRecorder] in
+        // One-time migration of legacy journey-preset goals.
+        if !settings.journeyMigrationCompleted {
+            LegacyJourneyMigration.run(goalManager: goalManager, journeyStore: journeyStore)
+            settings.journeyMigrationCompleted = true
+            dataManager.saveSettings(settings)
+        }
+        self.settings = settings
+
+        // Wire up auto-recording AND journey tick
+        self.bleManager.onStateUpdate = { [weak workoutRecorder, weak journeyEngine] in
             workoutRecorder?.handleStateUpdate()
+            journeyEngine?.handleTick()
         }
 
         // Request notification permission

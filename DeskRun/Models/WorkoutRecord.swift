@@ -9,6 +9,7 @@ struct WorkoutRecord: Codable, Identifiable {
     var calories: Int
     var duration: TimeInterval // seconds
     var averageSpeed: Double   // km/h
+    var journeyID: UUID?       // optional: set if recorded during an active journey
 
     init(
         id: UUID = UUID(),
@@ -18,7 +19,8 @@ struct WorkoutRecord: Codable, Identifiable {
         steps: Int = 0,
         calories: Int = 0,
         duration: TimeInterval = 0,
-        averageSpeed: Double = 0
+        averageSpeed: Double = 0,
+        journeyID: UUID? = nil
     ) {
         self.id = id
         self.startDate = startDate
@@ -28,6 +30,7 @@ struct WorkoutRecord: Codable, Identifiable {
         self.calories = calories
         self.duration = duration
         self.averageSpeed = averageSpeed
+        self.journeyID = journeyID
     }
 
     var formattedDuration: String {

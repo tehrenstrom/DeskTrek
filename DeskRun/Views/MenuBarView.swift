@@ -258,28 +258,30 @@ struct MenuBarView: View {
             }
 
             // Journey progress
-            if let journey = appState.goalManager.activeGoals.first(where: { $0.timeframe == .custom }) {
-                let prog = appState.goalManager.progress(
-                    for: journey,
-                    workouts: appState.workoutStore.workouts,
-                    settings: appState.settings
-                )
+            if let journey = appState.journeyStore.active,
+               let trail = TrailCatalog.trail(for: journey.trailID) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(journey.name)
+                        Text(trail.name)
                             .font(.system(size: 11, weight: .medium))
                         Spacer()
-                        Text("\(prog.percentageInt)%")
+                        Text(String(format: "%.1f / %.0f mi", journey.milesTraveled, trail.totalMiles))
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
+                            .monospacedDigit()
                     }
-                    ProgressView(value: prog.percentage)
+                    ProgressView(value: journey.progressPercentage)
                         .tint(.orange)
-                    if let nudge = appState.goalManager.nudgeText(for: journey, workouts: appState.workoutStore.workouts, settings: appState.settings) {
-                        Text(nudge)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text("♥ \(journey.morale)")
+                        Text("⚡ \(journey.energy)")
+                        if journey.isOverdue {
+                            Text("overdue")
+                                .foregroundStyle(.red)
+                        }
                     }
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
                 }
             }
         }

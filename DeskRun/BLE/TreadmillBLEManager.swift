@@ -15,6 +15,10 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
     /// (including manufacturer data, service UUIDs, etc.) instead of synthetic data.
     private var discoveryAdvertisementData: [UUID: [String: Any]] = [:]
 
+    /// Peripherals already emitted to the scan-debug log, so each device is
+    /// logged at most once per scan session rather than on every advertisement.
+    private var loggedPeripheralIDs: Set<UUID> = []
+
     private let state: TreadmillState
     var onStateUpdate: (() -> Void)?
 
@@ -36,6 +40,7 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
             return
         }
         discoveredDevices = []
+        loggedPeripheralIDs = []
         state.connectionStatus = .scanning
 
         // Scan for all peripherals rather than filtering by service UUID.
@@ -168,6 +173,19 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
                 discoveredDevices.append((peripheral: peripheral, name: name, brand: brand, rssi: RSSI.intValue))
                 print("✅ [BLE] Discovered \(brand) device: \(name) (RSSI: \(RSSI))")
             }
+        } else if !loggedPeripheralIDs.contains(peripheral.identifier) {
+            // Diagnostic: log unmatched peripherals once per scan so we can
+            // see what a user's treadmill is actually advertising when no
+            // adapter picks it up.
+            loggedPeripheralIDs.insert(peripheral.identifier)
+
+            let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? "<nil>"
+            let serviceUUIDs = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?
+                .map { $0.uuidString }
+                .joined(separator: ",") ?? "<none>"
+            let mfgData = (advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data)?.hexString ?? "<none>"
+
+            print("🔎 [BLE scan-debug] unmatched: name=\(peripheral.name ?? "<nil>") localName=\(localName) services=[\(serviceUUIDs)] mfg=\(mfgData) rssi=\(RSSI)")
         }
     }
 
@@ -301,6 +319,12 @@ class TreadmillBLEManager: NSObject, ObservableObject, CBCentralManagerDelegate,
 
         print("📥 [BLE] Notification (\(data.count) bytes): \(data.hexString)")
         let status = adapter.parseNotification(data)
+
+        // Let the adapter reply to this notification (e.g. PitPat heartbeat).
+        // Without this, PitPat firmware ignores subsequent command writes.
+        if let reply = adapter.onNotificationReceived(), let char = writeCharacteristic {
+            peripheral.writeValue(reply, for: char, type: adapter.writeType)
+        }
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }

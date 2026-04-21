@@ -130,6 +130,31 @@ struct SettingsView: View {
                         .tracking(1)
                 }
 
+                // Mode section
+                Section {
+                    HStack {
+                        Text("Current Adventure")
+                            .font(.system(size: 12, design: .monospaced))
+                        Spacer()
+                        Text((appState.settings.activeMode ?? .freeWalk).displayName.uppercased())
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(TrailColor.coral)
+                    }
+
+                    Button(
+                        appState.settings.activeMode == .journey ? "Switch to Free Walk" : "Switch to Journeys"
+                    ) {
+                        appState.settings.activeMode = appState.settings.activeMode == .journey ? .freeWalk : .journey
+                        appState.saveSettings()
+                    }
+                    .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
+                } header: {
+                    Text("ADVENTURE MODE")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(TrailColor.text)
+                        .tracking(1)
+                }
+
                 // About section
                 Section {
                     HStack {

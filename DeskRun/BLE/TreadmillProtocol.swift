@@ -73,4 +73,17 @@ protocol TreadmillAdapter {
 
     /// Parse raw notification bytes into a ``TreadmillStatus``.
     func parseNotification(_ data: Data) -> TreadmillStatus
+
+    // MARK: Keep-Alive (optional)
+
+    /// Called once per incoming notification. If the adapter returns non-nil,
+    /// the BLE manager writes the returned bytes to the write characteristic.
+    /// Use this for protocols that require the host to answer each status
+    /// notification with a heartbeat (e.g. PitPat). Default: nil.
+    func onNotificationReceived() -> Data?
+}
+
+extension TreadmillAdapter {
+    /// Default: no heartbeat reply. Adapters opt in by overriding.
+    func onNotificationReceived() -> Data? { nil }
 }

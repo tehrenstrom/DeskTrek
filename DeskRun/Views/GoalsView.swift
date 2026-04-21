@@ -3,53 +3,65 @@ import SwiftUI
 struct GoalsView: View {
     let appState: AppState
     @State private var showingAddGoal = false
-    @State private var showingJourneyPicker = false
+
+    private var modeFilteredGoals: [Goal] {
+        appState.goalManager.goals.filter { $0.mode == .freeWalk }
+    }
+
+    private var activeGoals: [Goal] {
+        modeFilteredGoals.filter { $0.isActive }
+    }
+
+    private var inactiveGoals: [Goal] {
+        modeFilteredGoals.filter { !$0.isActive }
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                    // Header
-                    HStack {
-                        Text("PROVISIONS")
-                            .font(.system(size: 18, weight: .bold, design: .monospaced))
-                            .foregroundStyle(TrailColor.text)
-                            .tracking(2)
-                        Spacer()
-                        Menu {
-                            Button("New Daily Ration") { showingAddGoal = true }
-                            Button("Chart a Journey") { showingJourneyPicker = true }
-                        } label: {
-                            Label("Supply Up", systemImage: "plus")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(TrailColor.coral)
-                        .controlSize(.small)
+                HStack {
+                    Text("PROVISIONS")
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .foregroundStyle(TrailColor.text)
+                        .tracking(2)
+                    Spacer()
+                    Button {
+                        showingAddGoal = true
+                    } label: {
+                        Label("New Ration", systemImage: "plus")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(TrailColor.coral)
+                    .controlSize(.small)
+                }
 
-                    // Active Goals
-                    if appState.goalManager.activeGoals.isEmpty {
-                        emptyState
-                    } else {
-                        ForEach(appState.goalManager.activeGoals) { goal in
-                            RetroGoalCard(goal: goal, appState: appState)
-                        }
+                if activeGoals.isEmpty {
+                    emptyState
+                } else {
+                    ForEach(activeGoals) { goal in
+                        RetroGoalCard(goal: goal, appState: appState)
                     }
+                }
 
-                    // Inactive goals
-                    let inactive = appState.goalManager.goals.filter { !$0.isActive }
-                    if !inactive.isEmpty {
-                        Text("ABANDONED TRAILS")
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundStyle(TrailColor.text.opacity(0.5))
-                            .tracking(1)
-                            .padding(.top, 8)
+                journeyNudgeCard
 
-                        ForEach(inactive) { goal in
-                            RetroGoalCard(goal: goal, appState: appState)
-                                .opacity(0.6)
-                        }
+                if !inactiveGoals.isEmpty {
+                    Text("ABANDONED TRAILS")
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundStyle(TrailColor.text.opacity(0.5))
+                        .tracking(1)
+                        .padding(.top, 8)
+
+                    ForEach(inactiveGoals) { goal in
+                        RetroGoalCard(goal: goal, appState: appState)
+                            .opacity(0.6)
                     }
+                }
+
+                if !appState.journeyStore.archivedGoals.isEmpty {
+                    archivedSection
+                }
             }
             .padding()
         }
@@ -58,9 +70,6 @@ struct GoalsView: View {
         .navigationTitle("Provisions")
         .sheet(isPresented: $showingAddGoal) {
             AddGoalSheet(appState: appState)
-        }
-        .sheet(isPresented: $showingJourneyPicker) {
-            JourneyPickerSheet(appState: appState)
         }
     }
 
@@ -72,13 +81,69 @@ struct GoalsView: View {
             Text("No provisions packed")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.6))
-            Text("Set a daily ration or chart a journey to track your progress on the trail.")
+            Text("Set a daily, weekly, or monthly ration to track your miles.")
                 .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.4))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+    }
+
+    private var journeyNudgeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "mountain.2")
+                    .font(.system(size: 22))
+                    .foregroundStyle(TrailColor.coral)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("LOOKING FOR AN ADVENTURE?")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundStyle(TrailColor.text)
+                        .tracking(1)
+                    Text("Try Journeys mode \u{2014} iconic trails with landmarks, encounters, and certificates.")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(TrailColor.text.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack {
+                Spacer()
+                Button("Switch to Journeys") {
+                    appState.settings.activeMode = .journey
+                    appState.saveSettings()
+                }
+                .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
+            }
+        }
+        .retroPanel()
+    }
+
+    private var archivedSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("ARCHIVED JOURNEY GOALS")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.5))
+                .tracking(1)
+                .padding(.top, 8)
+
+            Text("These long-distance goals moved when Journey Mode launched. They remain here for posterity.")
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.5))
+
+            ForEach(appState.journeyStore.archivedGoals) { goal in
+                HStack {
+                    Text(goal.name)
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .foregroundStyle(TrailColor.text.opacity(0.6))
+                    Spacer()
+                    Text("\(String(format: "%.0f", goal.target)) \(goal.unit.symbol)")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(TrailColor.text.opacity(0.5))
+                }
+                .padding(.vertical, 4)
+            }
+        }
     }
 }
 
@@ -136,8 +201,6 @@ struct RetroGoalCard: View {
         .retroPanel()
     }
 }
-
-// MARK: - GoalCard compatibility wrapper
 
 struct GoalCard: View {
     let goal: Goal
@@ -210,7 +273,8 @@ struct AddGoalSheet: View {
                             type: type,
                             target: target,
                             unit: unit,
-                            timeframe: timeframe
+                            timeframe: timeframe,
+                            mode: .freeWalk
                         )
                         appState.goalManager.addGoal(goal)
                         dismiss()
@@ -221,90 +285,5 @@ struct AddGoalSheet: View {
             .padding()
         }
         .frame(width: 400, height: 350)
-    }
-}
-
-// MARK: - Journey Picker
-
-struct JourneyPickerSheet: View {
-    let appState: AppState
-    @Environment(\.dismiss) private var dismiss
-    @State private var months: Int = 4
-
-    var body: some View {
-        ZStack {
-            TrailColor.parchment.ignoresSafeArea()
-
-            VStack(spacing: 16) {
-                Text("CHART A JOURNEY")
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
-                    .foregroundStyle(TrailColor.text)
-                    .tracking(2)
-
-                Text("Pick a real-world trail to walk from your desk. Track your progress across the miles.")
-                    .font(.system(size: 11, weight: .regular, design: .monospaced))
-                    .foregroundStyle(TrailColor.text.opacity(0.6))
-                    .multilineTextAlignment(.center)
-
-                ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(JourneyPreset.allPresets) { preset in
-                            Button(action: {
-                                let goal = appState.goalManager.createJourneyGoal(
-                                    from: preset,
-                                    useMetric: appState.settings.useMetric,
-                                    months: months
-                                )
-                                appState.goalManager.addGoal(goal)
-                                dismiss()
-                            }) {
-                                HStack {
-                                    Text(preset.emoji)
-                                        .font(.title2)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(preset.name)
-                                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                            .foregroundStyle(TrailColor.text)
-                                        Text("\(String(format: "%.0f", preset.distanceMiles)) mi \u{00B7} \(preset.description)")
-                                            .font(.system(size: 10, weight: .regular, design: .monospaced))
-                                            .foregroundStyle(TrailColor.text.opacity(0.6))
-                                    }
-                                    Spacer()
-                                    Text("\u{25B6}")
-                                        .font(.system(size: 12, design: .monospaced))
-                                        .foregroundStyle(TrailColor.text.opacity(0.4))
-                                }
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 12)
-                                .background(TrailColor.parchment.opacity(0.6))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .strokeBorder(TrailColor.darkEarth.opacity(0.3), lineWidth: 1)
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 3))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-
-                HStack {
-                    Text("Complete in")
-                        .font(.system(size: 11, weight: .regular, design: .monospaced))
-                        .foregroundStyle(TrailColor.text.opacity(0.7))
-                    Picker("Months", selection: $months) {
-                        ForEach([2, 3, 4, 6, 8, 12], id: \.self) { m in
-                            Text("\(m) months").tag(m)
-                        }
-                    }
-                    .frame(width: 120)
-                }
-
-                Button("Turn Back") { dismiss() }
-                    .buttonStyle(RetroSecondaryButtonStyle())
-            }
-            .padding()
-        }
-        .frame(width: 420, height: 480)
     }
 }

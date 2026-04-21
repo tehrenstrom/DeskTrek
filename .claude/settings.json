@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api *)",
+      "Bash(curl -sL https://raw.githubusercontent.com/azmke/pitpat-treadmill-control/main/src/bluetooth_manager.py)",
+      "Bash(curl -sL https://raw.githubusercontent.com/azmke/pitpat-treadmill-control/main/src/treadmill_controller.py)",
+      "Bash(curl -sL https://raw.githubusercontent.com/azmke/pitpat-treadmill-control/main/src/treadmill_data.py)",
+      "Bash(xcodebuild -project /Users/travisehrenstrom/Developer/DeskRun/DeskRun.xcodeproj -scheme DeskRun -configuration Debug -destination 'platform=macOS' build)",
+      "Bash(xcodebuild -project DeskRun.xcodeproj -scheme DeskRun -configuration Debug build -quiet)",
+      "Bash(xcodebuild -project DeskRun.xcodeproj -scheme DeskRun -configuration Debug build)",
+      "Bash(git -C /Users/travisehrenstrom/Developer/DeskRun status)"
+    ]
+  }
+}

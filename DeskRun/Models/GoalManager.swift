@@ -63,25 +63,6 @@ class GoalManager {
         )
     }
 
-    // MARK: - Journey Goal Helpers
-
-    func createJourneyGoal(from preset: JourneyPreset, useMetric: Bool, months: Int = 4) -> Goal {
-        let distance = useMetric ? preset.distanceKm : preset.distanceMiles
-        let unit: GoalUnit = useMetric ? .km : .miles
-        let endDate = Calendar.current.date(byAdding: .month, value: months, to: Date())
-
-        return Goal(
-            name: preset.name,
-            type: .distance,
-            target: distance,
-            unit: unit,
-            timeframe: .custom,
-            startDate: Date(),
-            endDate: endDate,
-            isActive: true
-        )
-    }
-
     // MARK: - Nudge Text
 
     func nudgeText(for goal: Goal, workouts: [WorkoutRecord], settings: AppSettings) -> String? {

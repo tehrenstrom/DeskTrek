@@ -13,6 +13,8 @@ struct AppSettings: Codable {
     var quietHoursStart: Int = 22           // 10 PM
     var quietHoursEnd: Int = 8              // 8 AM
     var maxNotificationsPerDay: Int = 3
+    var activeMode: AppMode? = nil          // nil = show splash on launch
+    var journeyMigrationCompleted: Bool = false
 
     // Convenience
 

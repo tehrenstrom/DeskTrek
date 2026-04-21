@@ -6,7 +6,7 @@ struct DeskRunApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(appState: appState)
+            RootView(appState: appState)
         }
         MenuBarExtra("DeskRun", systemImage: "figure.walk") {
             MenuBarView(appState: appState)

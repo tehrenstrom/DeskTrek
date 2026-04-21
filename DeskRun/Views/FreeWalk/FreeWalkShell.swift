@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum SidebarItem: String, Hashable, CaseIterable {
+enum FreeWalkSidebarItem: String, Hashable, CaseIterable {
     case dashboard = "Trail Status"
     case connection = "Outfitter"
     case goals = "Provisions"
@@ -8,14 +8,14 @@ enum SidebarItem: String, Hashable, CaseIterable {
     case settings = "Camp"
 }
 
-struct ContentView: View {
+struct FreeWalkShell: View {
     let appState: AppState
 
-    @State private var selectedItem: SidebarItem? = .dashboard
+    @State private var selectedItem: FreeWalkSidebarItem? = .dashboard
 
     var body: some View {
         NavigationSplitView {
-            List(SidebarItem.allCases, id: \.self, selection: $selectedItem) { item in
+            List(FreeWalkSidebarItem.allCases, id: \.self, selection: $selectedItem) { item in
                 sidebarLabel(for: item)
             }
             .navigationTitle("DeskRun")
@@ -43,13 +43,10 @@ struct ContentView: View {
                 selectedItem = .dashboard
             }
         }
-        .onAppear {
-            appState.notificationManager.requestPermission()
-        }
     }
 
     @ViewBuilder
-    private func sidebarLabel(for item: SidebarItem) -> some View {
+    private func sidebarLabel(for item: FreeWalkSidebarItem) -> some View {
         switch item {
         case .dashboard:
             Label("Trail Status", systemImage: "gauge.with.dots.needle.33percent")

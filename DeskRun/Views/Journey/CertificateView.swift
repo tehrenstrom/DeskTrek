@@ -3,6 +3,7 @@ import SwiftUI
 struct CertificateView: View {
     let certificate: Certificate
     let trail: Trail
+    let settings: AppSettings
 
     private var formattedDate: String {
         let f = DateFormatter()
@@ -49,7 +50,7 @@ struct CertificateView: View {
                     .padding(.horizontal, 60)
 
                 HStack(spacing: 32) {
-                    statBlock(label: "DISTANCE", value: String(format: "%.0f mi", certificate.totalMiles))
+                    statBlock(label: "DISTANCE", value: settings.distanceString(miles: certificate.totalMiles, decimals: 0))
                     statBlock(label: "DAYS", value: "\(certificate.totalDays)")
                     statBlock(label: "FINAL MORALE", value: "\(certificate.finalMorale)")
                 }

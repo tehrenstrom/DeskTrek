@@ -56,6 +56,7 @@ struct EncounterBanner: View {
             .overlay(
                 Rectangle()
                     .strokeBorder(TrailColor.coral, lineWidth: 3)
+                    .allowsHitTesting(false)
             )
             .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
         }

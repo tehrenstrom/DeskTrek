@@ -3,10 +3,9 @@ import SwiftUI
 struct JourneyMapView: View {
     let appState: AppState
 
-    @State private var showAbandonConfirm = false
-
     private var active: JourneyState? { appState.journeyStore.active }
     private var trail: Trail? { appState.journeyEngine.currentTrail ?? (active.flatMap { TrailCatalog.trail(for: $0.trailID) }) }
+    private var settings: AppSettings { appState.settings }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -46,49 +45,45 @@ struct JourneyMapView: View {
                 .transition(.scale.combined(with: .opacity))
                 .frame(maxWidth: .infinity)
             }
+
+            // Ambient wildlife/weather flavor caption (non-blocking, auto-dismiss).
+            if appState.journeyEngine.pendingEncounter == nil,
+               appState.journeyEngine.pendingLandmark == nil,
+               let caption = appState.journeyEngine.ambientCaption {
+                AmbientCaptionView(text: caption)
+                    .padding(.top, 24)
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .allowsHitTesting(false)
+            }
         }
         .animation(.easeInOut(duration: 0.3), value: appState.journeyEngine.pendingEncounter?.id)
         .animation(.easeInOut(duration: 0.3), value: appState.journeyEngine.pendingLandmark?.id)
+        .animation(.easeInOut(duration: 0.35), value: appState.journeyEngine.ambientCaption)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(TrailColor.sky)
         .navigationTitle(trail?.name ?? "Trail")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                let tracking = appState.journeyEngine.isTrackingEnabled
-                Button(tracking ? "Pause Tracking" : "Resume Tracking") {
-                    appState.journeyEngine.setTrackingEnabled(!tracking)
-                }
-                .foregroundStyle(tracking ? TrailColor.mountainBlue : TrailColor.forestGreen)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button("Abandon") { showAbandonConfirm = true }
-                    .foregroundStyle(TrailColor.coral)
-            }
-        }
-        .confirmationDialog(
-            "Abandon this journey? Progress moves to history.",
-            isPresented: $showAbandonConfirm
-        ) {
-            Button("Abandon", role: .destructive) {
-                appState.journeyEngine.abandon()
-            }
-            Button("Keep hiking", role: .cancel) {}
-        }
     }
 
     @ViewBuilder
     private func mapScene(trail: Trail, active: JourneyState) -> some View {
         GeometryReader { geo in
             let pausedBannerHeight: CGFloat = active.isTrackingEnabled ? 0 : 32
+            let walkCardHeight: CGFloat = 56
             VStack(spacing: 0) {
                 if !active.isTrackingEnabled {
                     pausedBanner
                         .frame(height: pausedBannerHeight)
                 }
                 mapCanvas(trail: trail, active: active, width: geo.size.width)
-                    .frame(height: geo.size.height - 120 - pausedBannerHeight)
+                    .frame(height: max(120, geo.size.height - walkCardHeight - 120 - pausedBannerHeight))
 
-                StatsBar(state: active, trail: trail, speed: appState.treadmillState.currentSpeed)
+                JourneyWalkCard(appState: appState)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .frame(height: walkCardHeight)
+
+                StatsBar(state: active, trail: trail, speed: appState.treadmillState.currentSpeed, settings: settings)
                     .frame(height: 120)
             }
         }
@@ -98,15 +93,11 @@ struct JourneyMapView: View {
         HStack(spacing: 8) {
             Image(systemName: "pause.circle.fill")
                 .foregroundStyle(TrailColor.forestGreen)
-            Text("JOURNEY PAUSED — WALKING NOW WON'T ADD MILES")
+            Text("JOURNEY PAUSED — RESUME FROM SETTINGS › ADVENTURE MODE")
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundStyle(TrailColor.darkEarth)
                 .tracking(2)
             Spacer()
-            Button("Resume") {
-                appState.journeyEngine.setTrackingEnabled(true)
-            }
-            .buttonStyle(RetroSecondaryButtonStyle())
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)
@@ -117,75 +108,156 @@ struct JourneyMapView: View {
     private func mapCanvas(trail: Trail, active: JourneyState, width: CGFloat) -> some View {
         let pxPerMile: CGFloat = 80
         let hikerOffsetX: CGFloat = width * 0.3
+        let speedKmh = appState.treadmillState.currentSpeed
 
-        TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
-            ZStack(alignment: .bottomLeading) {
-                // Sky background (static)
-                TrailColor.sky
-                    .ignoresSafeArea()
+        GeometryReader { geo in
+            let fullHeight = geo.size.height
+            let trailRibbonH: CGFloat = 24
+            let hillsH: CGFloat = 96
+            let mountainsH: CGFloat = 140
+            let trailTopY = fullHeight - trailRibbonH
+            let hikerSize: CGFloat = 64
+            let landmarkSize: CGFloat = 72
 
-                // Parallax mountains (slow scroll)
-                ParallaxLayer(
-                    assetName: trail.mapArt.mountainAsset,
-                    width: 512,
-                    height: 160,
-                    scrollOffset: CGFloat(active.milesTraveled) * pxPerMile * 0.3,
-                    fallbackColor: TrailColor.mountainBlue.opacity(0.6)
+            TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
+                let trailID = trail.id
+                let isTracking = active.isTrackingEnabled
+                // Band frames for ambient encounters. All in this ZStack's coord space.
+                let skyBand = CGRect(
+                    x: 0, y: 4,
+                    width: geo.size.width,
+                    height: max(40, trailTopY - hillsH - mountainsH / 2 - 4)
                 )
-                .frame(height: 160)
-                .offset(y: -90)
-
-                // Parallax hills
-                ParallaxLayer(
-                    assetName: trail.mapArt.hillAsset,
-                    width: 512,
-                    height: 120,
-                    scrollOffset: CGFloat(active.milesTraveled) * pxPerMile * 0.6,
-                    fallbackColor: TrailColor.forestGreen.opacity(0.6)
+                let distanceBand = CGRect(
+                    x: 0, y: trailTopY - hillsH + 8,
+                    width: geo.size.width,
+                    height: max(24, hillsH * 0.55)
                 )
-                .frame(height: 120)
-                .offset(y: -30)
+                let foregroundBand = CGRect(
+                    x: 0, y: trailTopY - 54,
+                    width: geo.size.width,
+                    height: 54
+                )
 
-                // Trail ribbon (the ground line hiker walks on)
-                Rectangle()
-                    .fill(TrailColor.desertSand)
-                    .frame(height: 24)
-                    .overlay(
-                        Rectangle()
-                            .fill(TrailColor.darkEarth.opacity(0.2))
-                            .frame(height: 2)
-                            .offset(y: 11)
+                ZStack(alignment: .topLeading) {
+                    // Sky background
+                    TrailColor.sky
+                        .frame(width: geo.size.width, height: fullHeight)
+
+                    // Parallax mountains — bottom edge just above the hills for overlap
+                    ParallaxLayer(
+                        assetName: trail.mapArt.mountainAsset,
+                        width: 512,
+                        height: mountainsH,
+                        scrollOffset: CGFloat(active.milesTraveled) * pxPerMile * 0.3,
+                        fallbackColor: TrailColor.mountainBlue.opacity(0.6)
+                    )
+                    .frame(width: geo.size.width, height: mountainsH)
+                    .offset(y: trailTopY - hillsH - mountainsH + 24)
+
+                    // Ambient sky band — clouds, birds, eagles, weather sheets.
+                    AmbientEncounterLayer(
+                        band: .sky,
+                        trailID: trailID,
+                        milesTraveled: active.milesTraveled,
+                        speedKmh: speedKmh,
+                        isTrackingEnabled: isTracking,
+                        date: timeline.date,
+                        bandFrame: skyBand,
+                        hikerScreenX: hikerOffsetX,
+                        pxPerMile: pxPerMile,
+                        onNotableSpawn: { species in
+                            appState.journeyEngine.showAmbientCaption(species.caption)
+                        }
                     )
 
-                // Landmarks ahead/behind hiker
-                ForEach(trail.landmarks) { landmark in
-                    let worldOffset = (landmark.mileMarker - active.milesTraveled) * Double(pxPerMile)
-                    let screenX = hikerOffsetX + CGFloat(worldOffset)
-                    if screenX > -100 && screenX < width + 100 {
-                        LandmarkSprite(
-                            landmark: landmark,
-                            highlighted: active.visitedLandmarkIDs.contains(landmark.id)
+                    // Parallax hills — bottom edge sits on the trail top
+                    ParallaxLayer(
+                        assetName: trail.mapArt.hillAsset,
+                        width: 512,
+                        height: hillsH,
+                        scrollOffset: CGFloat(active.milesTraveled) * pxPerMile * 0.6,
+                        fallbackColor: TrailColor.forestGreen.opacity(0.6)
+                    )
+                    .frame(width: geo.size.width, height: hillsH)
+                    .offset(y: trailTopY - hillsH)
+
+                    // Ambient distance band — far-off hikers, bears, ravens atop the hills.
+                    AmbientEncounterLayer(
+                        band: .distance,
+                        trailID: trailID,
+                        milesTraveled: active.milesTraveled,
+                        speedKmh: speedKmh,
+                        isTrackingEnabled: isTracking,
+                        date: timeline.date,
+                        bandFrame: distanceBand,
+                        hikerScreenX: hikerOffsetX,
+                        pxPerMile: pxPerMile,
+                        onNotableSpawn: { species in
+                            appState.journeyEngine.showAmbientCaption(species.caption)
+                        }
+                    )
+
+                    // Trail ribbon (the ground line)
+                    Rectangle()
+                        .fill(TrailColor.desertSand)
+                        .frame(width: geo.size.width, height: trailRibbonH)
+                        .overlay(
+                            Rectangle()
+                                .fill(TrailColor.darkEarth.opacity(0.2))
+                                .frame(height: 2)
+                                .offset(y: 11)
                         )
-                        .position(x: screenX, y: 40)
+                        .offset(y: trailTopY)
+
+                    // Landmarks, feet planted on the trail
+                    ForEach(trail.landmarks) { landmark in
+                        let worldOffset = (landmark.mileMarker - active.milesTraveled) * Double(pxPerMile)
+                        let screenX = hikerOffsetX + CGFloat(worldOffset)
+                        if screenX > -100 && screenX < width + 100 {
+                            LandmarkSprite(
+                                landmark: landmark,
+                                highlighted: active.visitedLandmarkIDs.contains(landmark.id)
+                            )
+                            .frame(width: landmarkSize, height: landmarkSize + 22, alignment: .bottom)
+                            .position(x: screenX, y: trailTopY - (landmarkSize + 22) / 2 + 2)
+                        }
                     }
-                }
 
-                // Hiker sprite
-                HikerSprite(size: 56, date: timeline.date)
-                    .position(x: hikerOffsetX, y: 40)
-
-                // Mile marker text above hiker
-                Text(String(format: "MILE %.1f / %.0f", active.milesTraveled, trail.totalMiles))
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(TrailColor.darkEarth)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(TrailColor.parchment)
-                    .overlay(
-                        Rectangle()
-                            .strokeBorder(TrailColor.darkEarth, lineWidth: 1)
+                    // Ambient foreground band — marmots, deer, squirrels passing by the trail.
+                    AmbientEncounterLayer(
+                        band: .foreground,
+                        trailID: trailID,
+                        milesTraveled: active.milesTraveled,
+                        speedKmh: speedKmh,
+                        isTrackingEnabled: isTracking,
+                        date: timeline.date,
+                        bandFrame: foregroundBand,
+                        hikerScreenX: hikerOffsetX,
+                        pxPerMile: pxPerMile,
+                        onNotableSpawn: { species in
+                            appState.journeyEngine.showAmbientCaption(species.caption)
+                        }
                     )
-                    .position(x: hikerOffsetX, y: 100)
+
+                    // Hiker — bottom of sprite rests on the trail top
+                    HikerSprite(size: hikerSize, date: timeline.date, speedKmh: speedKmh)
+                        .frame(width: hikerSize, height: hikerSize)
+                        .position(x: hikerOffsetX, y: trailTopY - hikerSize / 2 + 4)
+
+                    // Mile marker text floating just above the hiker
+                    Text("\(settings.distanceUnitShort.uppercased()) \(settings.distanceValueString(miles: active.milesTraveled)) / \(settings.distanceValueString(miles: trail.totalMiles, decimals: 0))")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(TrailColor.darkEarth)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(TrailColor.parchment)
+                        .overlay(
+                            Rectangle()
+                                .strokeBorder(TrailColor.darkEarth, lineWidth: 1)
+                        )
+                        .position(x: hikerOffsetX, y: trailTopY - hikerSize - 16)
+                }
             }
         }
     }
@@ -197,20 +269,25 @@ private struct StatsBar: View {
     let state: JourneyState
     let trail: Trail
     let speed: Double
+    let settings: AppSettings
+
+    @State private var hoveredLandmarkID: String?
 
     var body: some View {
         VStack(spacing: 8) {
-            RetroProgressBar(
+            JourneyProgressBar(
                 progress: state.progressPercentage,
-                fillColor: TrailColor.forestGreen,
-                height: 10
+                trail: trail,
+                visitedLandmarkIDs: state.visitedLandmarkIDs,
+                height: 12,
+                hoveredLandmarkID: $hoveredLandmarkID
             )
             HStack(alignment: .top, spacing: 18) {
-                stat(label: "MILES", value: String(format: "%.1f", state.milesTraveled))
-                stat(label: "REMAINING", value: String(format: "%.0f", max(0, trail.totalMiles - state.milesTraveled)))
+                stat(label: settings.useMetric ? "KM" : "MILES", value: settings.distanceValueString(miles: state.milesTraveled))
+                stat(label: "REMAINING", value: settings.distanceValueString(miles: max(0, trail.totalMiles - state.milesTraveled), decimals: 0))
                 stat(label: "MORALE", value: "\(state.morale)", tint: moraleColor(state.morale))
                 stat(label: "ENERGY", value: "\(state.energy)", tint: energyColor(state.energy))
-                stat(label: "SPEED", value: String(format: "%.1f km/h", speed))
+                stat(label: "SPEED", value: settings.speedString(speed))
                 if let target = state.targetCompletionDate {
                     stat(label: "TARGET", value: shortDate(target), tint: state.isOverdue ? TrailColor.coral : TrailColor.text)
                 }
@@ -226,6 +303,55 @@ private struct StatsBar: View {
                 .foregroundStyle(TrailColor.darkEarth),
             alignment: .top
         )
+        // Tooltip overlay applied AFTER the border so it stacks above the 2 px
+        // darkEarth line and can float freely into the map canvas above.
+        .overlay(alignment: .topLeading) {
+            if let id = hoveredLandmarkID,
+               let landmark = trail.landmarks.first(where: { $0.id == id }) {
+                GeometryReader { geo in
+                    let innerWidth = geo.size.width - 32     // -padding(.horizontal, 16)
+                    let fraction = min(1.0, landmark.mileMarker / trail.totalMiles)
+                    let x = 16 + innerWidth * CGFloat(fraction)
+                    tooltipView(for: landmark)
+                        .fixedSize()
+                        .position(x: clampTooltipX(x, width: geo.size.width), y: -14)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                }
+                .animation(.easeInOut(duration: 0.08), value: hoveredLandmarkID)
+            }
+        }
+    }
+
+    private func tooltipView(for landmark: Landmark) -> some View {
+        Text(tooltipText(for: landmark))
+            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .foregroundStyle(TrailColor.darkEarth)
+            .tracking(1)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(TrailColor.parchment)
+            .overlay(
+                Rectangle()
+                    .strokeBorder(TrailColor.darkEarth, lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+    }
+
+    private func tooltipText(for landmark: Landmark) -> String {
+        let delta = landmark.mileMarker - state.milesTraveled
+        if state.visitedLandmarkIDs.contains(landmark.id) {
+            return "\(landmark.name.uppercased()) · VISITED"
+        }
+        if delta > 0 {
+            return "\(landmark.name.uppercased()) · \(settings.distanceString(miles: delta, decimals: 1)) AHEAD"
+        }
+        return landmark.name.uppercased()
+    }
+
+    private func clampTooltipX(_ x: CGFloat, width: CGFloat) -> CGFloat {
+        let pad: CGFloat = 90
+        return max(pad, min(width - pad, x))
     }
 
     private func stat(label: String, value: String, tint: Color = TrailColor.text) -> some View {
@@ -259,6 +385,33 @@ private struct StatsBar: View {
     }
 }
 
+// MARK: - Ambient Caption
+
+private struct AmbientCaptionView: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "leaf.fill")
+                .foregroundStyle(TrailColor.forestGreen.opacity(0.8))
+                .font(.system(size: 11))
+            Text(text)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.85))
+                .italic()
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(TrailColor.parchment.opacity(0.85))
+        .overlay(
+            Rectangle()
+                .strokeBorder(TrailColor.darkEarth.opacity(0.4), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
+    }
+}
+
 // MARK: - Encounter Result Toast
 
 private struct EncounterResultToast: View {
@@ -276,6 +429,7 @@ private struct EncounterResultToast: View {
             Spacer()
             Button("OK") { onDismiss() }
                 .buttonStyle(RetroSecondaryButtonStyle())
+                .keyboardShortcut(.defaultAction)
         }
         .padding(14)
         .frame(maxWidth: 520)
@@ -283,6 +437,7 @@ private struct EncounterResultToast: View {
         .overlay(
             Rectangle()
                 .strokeBorder(TrailColor.forestGreen, lineWidth: 2)
+                .allowsHitTesting(false)
         )
         .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
     }
@@ -317,13 +472,90 @@ private struct LandmarkNoticeView: View {
 
             Button("Continue") { onDismiss() }
                 .buttonStyle(RetroButtonStyle(tint: TrailColor.forestGreen))
+                .keyboardShortcut(.defaultAction)
         }
         .padding(20)
         .background(TrailColor.parchment)
         .overlay(
             Rectangle()
                 .strokeBorder(TrailColor.darkEarth, lineWidth: 3)
+                .allowsHitTesting(false)
         )
         .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+    }
+}
+
+// MARK: - Journey Progress Bar with landmark ticks
+
+private struct JourneyProgressBar: View {
+    let progress: Double
+    let trail: Trail
+    let visitedLandmarkIDs: Set<String>
+    let height: CGFloat
+    @Binding var hoveredLandmarkID: String?
+
+    var body: some View {
+        VStack(spacing: 2) {
+            // Landmark markers above the bar
+            GeometryReader { geo in
+                ForEach(trail.landmarks) { landmark in
+                    let fraction = min(1.0, landmark.mileMarker / trail.totalMiles)
+                    let x = geo.size.width * CGFloat(fraction)
+                    landmarkMarker(for: landmark)
+                        .position(x: x, y: 7)
+                }
+            }
+            .frame(height: 14)
+
+            // Progress bar itself
+            RetroProgressBar(
+                progress: progress,
+                fillColor: TrailColor.forestGreen,
+                height: height
+            )
+            .overlay(alignment: .leading) {
+                GeometryReader { geo in
+                    ForEach(trail.landmarks) { landmark in
+                        let fraction = min(1.0, landmark.mileMarker / trail.totalMiles)
+                        let x = geo.size.width * CGFloat(fraction)
+                        Rectangle()
+                            .fill(tickOnBarColor(for: landmark, atFraction: fraction))
+                            .frame(width: landmark.isMajor ? 2 : 1, height: height - 4)
+                            .position(x: x, y: height / 2)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func landmarkMarker(for landmark: Landmark) -> some View {
+        let visited = visitedLandmarkIDs.contains(landmark.id)
+        let symbol = landmark.isMajor ? "★" : "▼"
+        let color: Color = visited
+            ? (landmark.isMajor ? TrailColor.coral : TrailColor.forestGreen)
+            : TrailColor.darkEarth.opacity(0.35)
+        Text(symbol)
+            .font(.system(size: landmark.isMajor ? 12 : 9, weight: .bold, design: .monospaced))
+            .foregroundStyle(color)
+            .frame(width: 24, height: 16)
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                if hovering {
+                    hoveredLandmarkID = landmark.id
+                } else if hoveredLandmarkID == landmark.id {
+                    hoveredLandmarkID = nil
+                }
+            }
+    }
+
+    /// A thin vertical tick drawn ON the bar at the landmark's position.
+    /// Uses a contrasting colour depending on whether the fill has reached it.
+    private func tickOnBarColor(for landmark: Landmark, atFraction: Double) -> Color {
+        let reached = progress >= atFraction
+        if visitedLandmarkIDs.contains(landmark.id) {
+            return reached ? TrailColor.parchment : TrailColor.coral
+        }
+        return TrailColor.darkEarth.opacity(reached ? 0.6 : 0.4)
     }
 }

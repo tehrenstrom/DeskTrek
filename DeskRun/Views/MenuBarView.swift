@@ -5,6 +5,7 @@ struct MenuBarView: View {
 
     private var state: TreadmillState { appState.treadmillState }
     private var bleManager: TreadmillBLEManager { appState.bleManager }
+    private var settings: AppSettings { appState.settings }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,34 +82,35 @@ struct MenuBarView: View {
             if state.connectionStatus == .connected {
                 // Large speed display
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(String(format: "%.1f", state.currentSpeed))
+                    Text(settings.speedValueString(state.currentSpeed))
                         .font(.system(size: 42, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                    Text("km/h")
+                    Text(settings.speedUnitShort)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 // +/- and preset buttons
                 HStack(spacing: 6) {
-                    Button(action: { adjustSpeed(-0.5) }) {
+                    Button(action: { adjustSpeed(-settings.speedIncrement) }) {
                         Image(systemName: "minus")
                             .frame(width: 28, height: 28)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
 
-                    ForEach([2.0, 3.0, 4.0, 5.0], id: \.self) { speed in
-                        Button(String(format: "%.0f", speed)) {
+                    ForEach(settings.speedPresets, id: \.self) { displaySpeed in
+                        Button(settings.speedPresetLabel(displaySpeed)) {
+                            let speed = settings.kilometersPerHour(fromDisplaySpeed: displaySpeed)
                             state.targetSpeed = speed
                             bleManager.setSpeed(speed)
                         }
                         .buttonStyle(.bordered)
-                        .tint(speed == state.targetSpeed ? .accentColor : nil)
+                        .tint(settings.isSelectedSpeedPreset(state.targetSpeed, displayPreset: displaySpeed) ? .accentColor : nil)
                         .controlSize(.small)
                     }
 
-                    Button(action: { adjustSpeed(0.5) }) {
+                    Button(action: { adjustSpeed(settings.speedIncrement) }) {
                         Image(systemName: "plus")
                             .frame(width: 28, height: 28)
                     }
@@ -135,7 +137,7 @@ struct MenuBarView: View {
                         .controlSize(.regular)
                     } else {
                         Button(action: {
-                            let speed = state.targetSpeed > 0 ? state.targetSpeed : 3.0
+                            let speed = state.targetSpeed > 0 ? state.targetSpeed : settings.defaultSpeed
                             bleManager.startTreadmill(speed: speed)
                         }) {
                             Label("Start Walking", systemImage: "figure.walk")
@@ -168,9 +170,9 @@ struct MenuBarView: View {
     @ViewBuilder
     private var currentSessionSection: some View {
         HStack(spacing: 0) {
-            miniStat(icon: "speedometer", value: state.formattedSpeed)
+            miniStat(icon: "speedometer", value: settings.speedString(state.currentSpeed))
             Spacer()
-            miniStat(icon: "map", value: state.formattedDistance)
+            miniStat(icon: "map", value: settings.distanceString(state.distance, decimals: 2))
             Spacer()
             miniStat(icon: "clock", value: state.formattedDuration)
             Spacer()
@@ -265,7 +267,7 @@ struct MenuBarView: View {
                         Text(trail.name)
                             .font(.system(size: 11, weight: .medium))
                         Spacer()
-                        Text(String(format: "%.1f / %.0f mi", journey.milesTraveled, trail.totalMiles))
+                        Text("\(settings.distanceValueString(miles: journey.milesTraveled)) / \(settings.distanceValueString(miles: trail.totalMiles, decimals: 0)) \(settings.distanceUnitShort)")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
@@ -320,8 +322,15 @@ struct MenuBarView: View {
         }
     }
 
-    private func adjustSpeed(_ delta: Double) {
-        let newSpeed = max(0.5, min(6.0, state.targetSpeed + delta))
+    private func adjustSpeed(_ displayDelta: Double) {
+        let baselineSpeed = state.targetSpeed > 0
+            ? state.targetSpeed
+            : (state.currentSpeed > 0 ? state.currentSpeed : settings.defaultSpeed)
+        let newDisplaySpeed = max(
+            settings.minimumControlSpeed,
+            min(settings.maximumControlSpeed, settings.speedValue(baselineSpeed) + displayDelta)
+        )
+        let newSpeed = settings.kilometersPerHour(fromDisplaySpeed: newDisplaySpeed)
         state.targetSpeed = newSpeed
         bleManager.setSpeed(newSpeed)
     }

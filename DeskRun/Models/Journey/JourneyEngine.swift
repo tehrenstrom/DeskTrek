@@ -26,6 +26,7 @@ struct LandmarkNotice: Identifiable, Equatable {
 final class JourneyEngine {
     private let treadmillState: TreadmillState
     private let store: JourneyStore
+    private let walkSession: WalkSession?
 
     private(set) var currentTrail: Trail?
 
@@ -34,15 +35,22 @@ final class JourneyEngine {
     var pendingLandmark: LandmarkNotice?
     var lastResultText: String?
     var showCompletion: Bool = false
+    /// A brief flavor caption triggered by ambient wildlife/weather. Purely
+    /// visual — no state changes, no input. Auto-dismisses after ~4 s.
+    var ambientCaption: String?
 
     private var pendingEncounterQueue: [EncounterEvent] = []
     private var timeoutTask: Task<Void, Never>?
     private var persistDebounceTask: Task<Void, Never>?
+    private var ambientCaptionTask: Task<Void, Never>?
     private var sleepObserver: NSObjectProtocol?
+    private var lastAmbientCaptionMile: Double = -1  // -1 = no caption yet
+    private static let ambientCaptionMileGap: Double = 1.0
 
-    init(treadmillState: TreadmillState, store: JourneyStore) {
+    init(treadmillState: TreadmillState, store: JourneyStore, walkSession: WalkSession? = nil) {
         self.treadmillState = treadmillState
         self.store = store
+        self.walkSession = walkSession
         if let active = store.active {
             self.currentTrail = TrailCatalog.trail(for: active.trailID)
         }
@@ -55,6 +63,39 @@ final class JourneyEngine {
         }
         timeoutTask?.cancel()
         persistDebounceTask?.cancel()
+        ambientCaptionTask?.cancel()
+    }
+
+    // MARK: - Ambient captions
+
+    /// Surface a one-line caption from the ambient encounters layer. Rate-limited
+    /// to at most one per `ambientCaptionMileGap` miles walked and suppressed
+    /// while a narrative encounter or landmark notice is on screen.
+    @MainActor
+    func showAmbientCaption(_ text: String) {
+        guard pendingEncounter == nil, pendingLandmark == nil else { return }
+        guard !text.isEmpty else { return }
+        if let miles = store.active?.milesTraveled {
+            if lastAmbientCaptionMile >= 0 && (miles - lastAmbientCaptionMile) < Self.ambientCaptionMileGap {
+                return
+            }
+            lastAmbientCaptionMile = miles
+        }
+        ambientCaption = text
+        ambientCaptionTask?.cancel()
+        ambientCaptionTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard let self, !Task.isCancelled else { return }
+            if self.ambientCaption == text {
+                self.ambientCaption = nil
+            }
+        }
+    }
+
+    @MainActor
+    func dismissAmbientCaption() {
+        ambientCaption = nil
+        ambientCaptionTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -105,9 +146,15 @@ final class JourneyEngine {
         let currentKm = treadmillState.distance
         self.currentTrail = trail
 
-        // If tracking is paused (user is doing a free walk), keep the baseline rolling
-        // so when they resume only NEW miles accumulate — nothing from the paused window.
-        guard state.isTrackingEnabled else {
+        // Miles only accrue when the current walk is explicitly a journey walk
+        // AND the journey is not paused. Free walks (dashboard), device-initiated
+        // sessions, and paused journeys all skip accrual — but we still roll the
+        // baseline forward so resumed journey walks don't retroactively absorb
+        // any of that distance.
+        let isJourneyWalk = walkSession?.context == .journey
+            && walkSession?.journeyID == state.id
+        let accruing = isJourneyWalk && state.isTrackingEnabled
+        guard accruing else {
             state.baselineTreadmillKm = currentKm - (state.milesTraveled * 1.60934)
             state.lastSeenTreadmillKm = currentKm
             store.saveActive(state)
@@ -159,6 +206,12 @@ final class JourneyEngine {
             if state.visitedLandmarkIDs.insert(landmark.id).inserted {
                 pendingLandmark = LandmarkNotice(landmark: landmark)
                 SoundManager.shared.playGoalAchieved()
+                // Add a Trail Portrait collectible to the Trophy Wall.
+                store.addPortrait(TrailPortrait(
+                    trailID: trail.id,
+                    landmarkID: landmark.id,
+                    journeyID: state.id
+                ))
             }
         }
 

@@ -13,6 +13,7 @@ class AppState {
     let notificationManager: DeskRunNotificationManager
     let journeyStore: JourneyStore
     let journeyEngine: JourneyEngine
+    let walkSession: WalkSession
     var settings: AppSettings
 
     init() {
@@ -23,7 +24,8 @@ class AppState {
         let goalManager = GoalManager(dataManager: dataManager)
         let statsCalculator = StatsCalculator(workoutStore: workoutStore)
         let journeyStore = JourneyStore(dataManager: dataManager)
-        let journeyEngine = JourneyEngine(treadmillState: treadmillState, store: journeyStore)
+        let walkSession = WalkSession()
+        let journeyEngine = JourneyEngine(treadmillState: treadmillState, store: journeyStore, walkSession: walkSession)
 
         // Register all known treadmill adapters before creating the BLE manager.
         // Add new adapters here as they are implemented.
@@ -38,9 +40,15 @@ class AppState {
         self.workoutStore = workoutStore
         self.goalManager = goalManager
         self.statsCalculator = statsCalculator
-        self.workoutRecorder = WorkoutRecorder(treadmillState: treadmillState, workoutStore: workoutStore)
+        self.workoutRecorder = WorkoutRecorder(
+            treadmillState: treadmillState,
+            workoutStore: workoutStore,
+            journeyStore: journeyStore,
+            walkSession: walkSession
+        )
         self.journeyStore = journeyStore
         self.journeyEngine = journeyEngine
+        self.walkSession = walkSession
         self.notificationManager = DeskRunNotificationManager(
             workoutStore: workoutStore,
             goalManager: goalManager,
@@ -56,6 +64,18 @@ class AppState {
         if !settings.journeyMigrationCompleted {
             LegacyJourneyMigration.run(goalManager: goalManager, journeyStore: journeyStore)
             settings.journeyMigrationCompleted = true
+            dataManager.saveSettings(settings)
+        }
+
+        if !settings.journeyWorkoutBackfillCompleted {
+            JourneyWorkoutBackfillMigration.run(workoutStore: workoutStore, journeyStore: journeyStore)
+            settings.journeyWorkoutBackfillCompleted = true
+            dataManager.saveSettings(settings)
+        }
+
+        if !settings.portraitBackfillCompleted {
+            PortraitBackfillMigration.run(journeyStore: journeyStore)
+            settings.portraitBackfillCompleted = true
             dataManager.saveSettings(settings)
         }
         self.settings = settings

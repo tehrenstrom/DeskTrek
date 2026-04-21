@@ -10,9 +10,10 @@ enum CertificateRenderer {
     static func render(
         certificate: Certificate,
         trail: Trail,
+        settings: AppSettings,
         dataManager: DataManager
     ) -> URL? {
-        let view = CertificateView(certificate: certificate, trail: trail)
+        let view = CertificateView(certificate: certificate, trail: trail, settings: settings)
             .frame(width: 792, height: 612)
 
         let renderer = ImageRenderer(content: view)

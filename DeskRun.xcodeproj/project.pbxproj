@@ -37,7 +37,6 @@
 		A10000010000000000000030 /* RetroTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* RetroTheme.swift */; };
 		A10000010000000000000031 /* TrailMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* TrailMessages.swift */; };
 		A10000010000000000000032 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000032 /* SoundManager.swift */; };
-		A10000010000000000000040 /* AppMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* AppMode.swift */; };
 		A10000010000000000000041 /* Trail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* Trail.swift */; };
 		A10000010000000000000042 /* JourneyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000042 /* JourneyState.swift */; };
 		A10000010000000000000043 /* JourneyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000043 /* JourneyStore.swift */; };
@@ -47,9 +46,6 @@
 		A10000010000000000000047 /* LegacyJourneyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000047 /* LegacyJourneyMigration.swift */; };
 		A10000010000000000000048 /* JohnMuirTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000048 /* JohnMuirTrail.swift */; };
 		A10000010000000000000049 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000049 /* RootView.swift */; };
-		A1000001000000000000004A /* ModeSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004A /* ModeSplashView.swift */; };
-		A1000001000000000000004B /* FreeWalkShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004B /* FreeWalkShell.swift */; };
-		A1000001000000000000004C /* JourneyShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004C /* JourneyShell.swift */; };
 		A1000001000000000000004D /* TrailPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004D /* TrailPickerView.swift */; };
 		A1000001000000000000004E /* JourneyMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004E /* JourneyMapView.swift */; };
 		A1000001000000000000004F /* EncounterBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004F /* EncounterBanner.swift */; };
@@ -61,6 +57,15 @@
 		A10000010000000000000055 /* LandmarkSprite.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000055 /* LandmarkSprite.swift */; };
 		A10000010000000000000056 /* ParallaxLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000056 /* ParallaxLayer.swift */; };
 		A10000010000000000000057 /* PixelImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000057 /* PixelImage.swift */; };
+		A10000010000000000000058 /* PixelCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000058 /* PixelCanvas.swift */; };
+		A10000010000000000000059 /* PixelSprites.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000059 /* PixelSprites.swift */; };
+		A1000001000000000000005A /* FreeWalkControlCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005A /* FreeWalkControlCard.swift */; };
+		A10000010000000000000060 /* WalkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000060 /* WalkSession.swift */; };
+		A10000010000000000000061 /* MainShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000061 /* MainShell.swift */; };
+		A10000010000000000000062 /* JourneyWalkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000062 /* JourneyWalkCard.swift */; };
+		A10000010000000000000070 /* AmbientArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000070 /* AmbientArt.swift */; };
+		A10000010000000000000071 /* AmbientEncounterLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000071 /* AmbientEncounterLayer.swift */; };
+		A10000010000000000000072 /* AmbientEncounters.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000072 /* AmbientEncounters.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -97,7 +102,6 @@
 		A20000010000000000000030 /* RetroTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetroTheme.swift; sourceTree = "<group>"; };
 		A20000010000000000000031 /* TrailMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrailMessages.swift; sourceTree = "<group>"; };
 		A20000010000000000000032 /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
-		A20000010000000000000040 /* AppMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMode.swift; sourceTree = "<group>"; };
 		A20000010000000000000041 /* Trail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trail.swift; sourceTree = "<group>"; };
 		A20000010000000000000042 /* JourneyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyState.swift; sourceTree = "<group>"; };
 		A20000010000000000000043 /* JourneyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyStore.swift; sourceTree = "<group>"; };
@@ -107,9 +111,6 @@
 		A20000010000000000000047 /* LegacyJourneyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyJourneyMigration.swift; sourceTree = "<group>"; };
 		A20000010000000000000048 /* JohnMuirTrail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JohnMuirTrail.swift; sourceTree = "<group>"; };
 		A20000010000000000000049 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		A2000001000000000000004A /* ModeSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeSplashView.swift; sourceTree = "<group>"; };
-		A2000001000000000000004B /* FreeWalkShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeWalkShell.swift; sourceTree = "<group>"; };
-		A2000001000000000000004C /* JourneyShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyShell.swift; sourceTree = "<group>"; };
 		A2000001000000000000004D /* TrailPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrailPickerView.swift; sourceTree = "<group>"; };
 		A2000001000000000000004E /* JourneyMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyMapView.swift; sourceTree = "<group>"; };
 		A2000001000000000000004F /* EncounterBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncounterBanner.swift; sourceTree = "<group>"; };
@@ -121,6 +122,15 @@
 		A20000010000000000000055 /* LandmarkSprite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandmarkSprite.swift; sourceTree = "<group>"; };
 		A20000010000000000000056 /* ParallaxLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallaxLayer.swift; sourceTree = "<group>"; };
 		A20000010000000000000057 /* PixelImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelImage.swift; sourceTree = "<group>"; };
+		A20000010000000000000058 /* PixelCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelCanvas.swift; sourceTree = "<group>"; };
+		A20000010000000000000059 /* PixelSprites.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelSprites.swift; sourceTree = "<group>"; };
+		A2000001000000000000005A /* FreeWalkControlCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeWalkControlCard.swift; sourceTree = "<group>"; };
+		A20000010000000000000060 /* WalkSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkSession.swift; sourceTree = "<group>"; };
+		A20000010000000000000061 /* MainShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainShell.swift; sourceTree = "<group>"; };
+		A20000010000000000000062 /* JourneyWalkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyWalkCard.swift; sourceTree = "<group>"; };
+		A20000010000000000000070 /* AmbientArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientArt.swift; sourceTree = "<group>"; };
+		A20000010000000000000071 /* AmbientEncounterLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientEncounterLayer.swift; sourceTree = "<group>"; };
+		A20000010000000000000072 /* AmbientEncounters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientEncounters.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,7 +190,7 @@
 				A20000010000000000000018 /* NotificationManager.swift */,
 				A20000010000000000000019 /* AppState.swift */,
 				A20000010000000000000031 /* TrailMessages.swift */,
-				A20000010000000000000040 /* AppMode.swift */,
+				A20000010000000000000060 /* WalkSession.swift */,
 				A40000010000000000000009 /* Journey */,
 			);
 			path = Models;
@@ -196,6 +206,7 @@
 				A20000010000000000000045 /* TrailCatalog.swift */,
 				A20000010000000000000046 /* CertificateRenderer.swift */,
 				A20000010000000000000047 /* LegacyJourneyMigration.swift */,
+				A20000010000000000000072 /* AmbientEncounters.swift */,
 				A4000001000000000000000A /* Content */,
 			);
 			path = Journey;
@@ -243,7 +254,6 @@
 				A2000001000000000000001C /* SettingsView.swift */,
 				A20000010000000000000030 /* RetroTheme.swift */,
 				A4000001000000000000000B /* Root */,
-				A4000001000000000000000C /* FreeWalk */,
 				A4000001000000000000000D /* Journey */,
 				A4000001000000000000000F /* Shared */,
 			);
@@ -254,23 +264,14 @@
 			isa = PBXGroup;
 			children = (
 				A20000010000000000000049 /* RootView.swift */,
-				A2000001000000000000004A /* ModeSplashView.swift */,
+				A20000010000000000000061 /* MainShell.swift */,
 			);
 			path = Root;
-			sourceTree = "<group>";
-		};
-		A4000001000000000000000C /* FreeWalk */ = {
-			isa = PBXGroup;
-			children = (
-				A2000001000000000000004B /* FreeWalkShell.swift */,
-			);
-			path = FreeWalk;
 			sourceTree = "<group>";
 		};
 		A4000001000000000000000D /* Journey */ = {
 			isa = PBXGroup;
 			children = (
-				A2000001000000000000004C /* JourneyShell.swift */,
 				A2000001000000000000004D /* TrailPickerView.swift */,
 				A2000001000000000000004E /* JourneyMapView.swift */,
 				A2000001000000000000004F /* EncounterBanner.swift */,
@@ -278,9 +279,22 @@
 				A20000010000000000000051 /* CertificateView.swift */,
 				A20000010000000000000052 /* TrophyWallView.swift */,
 				A20000010000000000000053 /* BadgesView.swift */,
+				A2000001000000000000005A /* FreeWalkControlCard.swift */,
+				A20000010000000000000062 /* JourneyWalkCard.swift */,
 				A4000001000000000000000E /* Components */,
+				A40000010000000000000010 /* Art */,
 			);
 			path = Journey;
+			sourceTree = "<group>";
+		};
+		A40000010000000000000010 /* Art */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000058 /* PixelCanvas.swift */,
+				A20000010000000000000059 /* PixelSprites.swift */,
+				A20000010000000000000070 /* AmbientArt.swift */,
+			);
+			path = Art;
 			sourceTree = "<group>";
 		};
 		A4000001000000000000000E /* Components */ = {
@@ -289,6 +303,7 @@
 				A20000010000000000000054 /* HikerSprite.swift */,
 				A20000010000000000000055 /* LandmarkSprite.swift */,
 				A20000010000000000000056 /* ParallaxLayer.swift */,
+				A20000010000000000000071 /* AmbientEncounterLayer.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -407,7 +422,6 @@
 				A10000010000000000000030 /* RetroTheme.swift in Sources */,
 				A10000010000000000000031 /* TrailMessages.swift in Sources */,
 				A10000010000000000000032 /* SoundManager.swift in Sources */,
-				A10000010000000000000040 /* AppMode.swift in Sources */,
 				A10000010000000000000041 /* Trail.swift in Sources */,
 				A10000010000000000000042 /* JourneyState.swift in Sources */,
 				A10000010000000000000043 /* JourneyStore.swift in Sources */,
@@ -417,9 +431,6 @@
 				A10000010000000000000047 /* LegacyJourneyMigration.swift in Sources */,
 				A10000010000000000000048 /* JohnMuirTrail.swift in Sources */,
 				A10000010000000000000049 /* RootView.swift in Sources */,
-				A1000001000000000000004A /* ModeSplashView.swift in Sources */,
-				A1000001000000000000004B /* FreeWalkShell.swift in Sources */,
-				A1000001000000000000004C /* JourneyShell.swift in Sources */,
 				A1000001000000000000004D /* TrailPickerView.swift in Sources */,
 				A1000001000000000000004E /* JourneyMapView.swift in Sources */,
 				A1000001000000000000004F /* EncounterBanner.swift in Sources */,
@@ -431,6 +442,15 @@
 				A10000010000000000000055 /* LandmarkSprite.swift in Sources */,
 				A10000010000000000000056 /* ParallaxLayer.swift in Sources */,
 				A10000010000000000000057 /* PixelImage.swift in Sources */,
+				A10000010000000000000058 /* PixelCanvas.swift in Sources */,
+				A10000010000000000000059 /* PixelSprites.swift in Sources */,
+				A1000001000000000000005A /* FreeWalkControlCard.swift in Sources */,
+				A10000010000000000000060 /* WalkSession.swift in Sources */,
+				A10000010000000000000061 /* MainShell.swift in Sources */,
+				A10000010000000000000062 /* JourneyWalkCard.swift in Sources */,
+				A10000010000000000000070 /* AmbientArt.swift in Sources */,
+				A10000010000000000000071 /* AmbientEncounterLayer.swift in Sources */,
+				A10000010000000000000072 /* AmbientEncounters.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

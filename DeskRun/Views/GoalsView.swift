@@ -2,18 +2,15 @@ import SwiftUI
 
 struct GoalsView: View {
     let appState: AppState
+    var onOpenTrail: (() -> Void)? = nil
     @State private var showingAddGoal = false
 
-    private var modeFilteredGoals: [Goal] {
-        appState.goalManager.goals.filter { $0.mode == .freeWalk }
-    }
-
     private var activeGoals: [Goal] {
-        modeFilteredGoals.filter { $0.isActive }
+        appState.goalManager.goals.filter { $0.isActive }
     }
 
     private var inactiveGoals: [Goal] {
-        modeFilteredGoals.filter { !$0.isActive }
+        appState.goalManager.goals.filter { !$0.isActive }
     }
 
     var body: some View {
@@ -81,7 +78,7 @@ struct GoalsView: View {
             Text("No provisions packed")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.6))
-            Text("Set a daily, weekly, or monthly ration to track your miles.")
+            Text("Set a daily, weekly, or monthly ration to track your distance.")
                 .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.4))
                 .multilineTextAlignment(.center)
@@ -109,11 +106,10 @@ struct GoalsView: View {
             }
             HStack {
                 Spacer()
-                Button("Switch to Journeys") {
-                    appState.settings.activeMode = .journey
-                    appState.saveSettings()
+                if let onOpenTrail {
+                    Button("Open Trail") { onOpenTrail() }
+                        .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
                 }
-                .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
             }
         }
         .retroPanel()
@@ -273,8 +269,7 @@ struct AddGoalSheet: View {
                             type: type,
                             target: target,
                             unit: unit,
-                            timeframe: timeframe,
-                            mode: .freeWalk
+                            timeframe: timeframe
                         )
                         appState.goalManager.addGoal(goal)
                         dismiss()

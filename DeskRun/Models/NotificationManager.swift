@@ -106,7 +106,7 @@ class DeskRunNotificationManager {
             if prog.percentage < 1.0 {
                 content.body = "\(prog.formattedCurrent) / \(prog.formattedTarget) \(goal.unit.symbol) today. A short walk would get you closer."
             } else {
-                content.body = "You've already hit today's goal! 🎉 Bonus miles are always welcome though."
+                content.body = "You've already hit today's goal! 🎉 Bonus distance is always welcome though."
             }
         } else {
             content.body = "Afternoon slump? A 15-minute walk might help. Your treadmill is right there."

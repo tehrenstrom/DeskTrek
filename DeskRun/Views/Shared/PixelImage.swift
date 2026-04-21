@@ -1,23 +1,30 @@
 import SwiftUI
 import AppKit
 
-/// Renders an Image asset with nearest-neighbor interpolation for crisp pixel art.
-/// Falls back to a magenta-bordered debug box when the asset is missing — so
-/// content authors can see exactly which sprite IDs still need real art.
+/// Renders a pixel-art asset.
+///
+/// Resolution order:
+/// 1. `PixelArtRegistry` — programmatic Swift-drawn sprite (preferred).
+/// 2. `NSImage(named:)` — bundled PNG in Assets.xcassets, if you drop one in later.
+/// 3. Magenta-bordered debug box with the asset name, so missing art is loud.
 struct PixelImage: View {
     let assetName: String
     var size: CGFloat? = nil
 
     var body: some View {
-        if let nsImage = NSImage(named: assetName) {
-            Image(nsImage: nsImage)
-                .interpolation(.none)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .modifier(OptionalSquareSize(size: size))
-        } else {
-            fallback
+        Group {
+            if let sprite = PixelArtRegistry.all[assetName] {
+                PixelSpriteView(sprite: sprite)
+            } else if let nsImage = NSImage(named: assetName) {
+                Image(nsImage: nsImage)
+                    .interpolation(.none)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                fallback
+            }
         }
+        .modifier(OptionalSquareSize(size: size))
     }
 
     private var fallback: some View {
@@ -32,7 +39,6 @@ struct PixelImage: View {
                 .padding(2)
                 .multilineTextAlignment(.center)
         }
-        .frame(width: size ?? 48, height: size ?? 48)
     }
 }
 

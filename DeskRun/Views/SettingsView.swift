@@ -2,6 +2,10 @@ import SwiftUI
 
 struct SettingsView: View {
     let appState: AppState
+    var onOpenTrail: (() -> Void)? = nil
+    private let speedFormat = FloatingPointFormatStyle<Double>.number.precision(.fractionLength(1))
+
+    @State private var showAbandonConfirm = false
 
     var body: some View {
         Form {
@@ -12,22 +16,25 @@ struct SettingsView: View {
                             .font(.system(size: 13, weight: .medium, design: .monospaced))
                         Spacer()
                         TextField("", value: Binding(
-                            get: { appState.settings.defaultSpeed },
-                            set: { appState.settings.defaultSpeed = $0; appState.saveSettings() }
-                        ), format: .number)
-                        .frame(width: 60)
+                            get: { appState.settings.speedValue(appState.settings.defaultSpeed) },
+                            set: {
+                                appState.settings.defaultSpeed = appState.settings.kilometersPerHour(fromDisplaySpeed: $0)
+                                appState.saveSettings()
+                            }
+                        ), format: speedFormat)
+                        .frame(width: 70)
                         .textFieldStyle(.roundedBorder)
-                        Text("km/h")
+                        Text(appState.settings.speedUnitShort)
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundStyle(.secondary)
                     }
 
-                    Picker("Units", selection: Binding(
+                    Picker("Display Units", selection: Binding(
                         get: { appState.settings.useMetric },
                         set: { appState.settings.useMetric = $0; appState.saveSettings() }
                     )) {
-                        Text("Kilometers").tag(true)
-                        Text("Miles").tag(false)
+                        Text("Miles / MPH").tag(false)
+                        Text("Kilometers / km/h").tag(true)
                     }
 
                     HStack {
@@ -82,11 +89,11 @@ struct SettingsView: View {
                             set: { appState.settings.idleNudges = $0; appState.saveSettings() }
                         ))
 
-                        HStack {
+                        HStack(spacing: 8) {
                             Text("Quiet Hours")
                                 .font(.system(size: 12, design: .monospaced))
                             Spacer()
-                            Picker("Start", selection: Binding(
+                            Picker("Quiet Hours Start", selection: Binding(
                                 get: { appState.settings.quietHoursStart },
                                 set: { appState.settings.quietHoursStart = $0; appState.saveSettings() }
                             )) {
@@ -94,10 +101,13 @@ struct SettingsView: View {
                                     Text(formatHour(hour)).tag(hour)
                                 }
                             }
-                            .frame(width: 80)
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .frame(width: 96)
                             Text("to")
                                 .font(.system(size: 11, design: .monospaced))
-                            Picker("End", selection: Binding(
+                                .foregroundStyle(.secondary)
+                            Picker("Quiet Hours End", selection: Binding(
                                 get: { appState.settings.quietHoursEnd },
                                 set: { appState.settings.quietHoursEnd = $0; appState.saveSettings() }
                             )) {
@@ -105,14 +115,16 @@ struct SettingsView: View {
                                     Text(formatHour(hour)).tag(hour)
                                 }
                             }
-                            .frame(width: 80)
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .frame(width: 96)
                         }
 
                         HStack {
-                            Text("Max dispatches per day")
+                            Text("Max notifications per day")
                                 .font(.system(size: 12, design: .monospaced))
                             Spacer()
-                            Picker("", selection: Binding(
+                            Picker("Max notifications per day", selection: Binding(
                                 get: { appState.settings.maxNotificationsPerDay },
                                 set: { appState.settings.maxNotificationsPerDay = $0; appState.saveSettings() }
                             )) {
@@ -120,7 +132,9 @@ struct SettingsView: View {
                                     Text("\(n)").tag(n)
                                 }
                             }
-                            .frame(width: 60)
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .frame(width: 72)
                         }
                     }
                 } header: {
@@ -130,24 +144,9 @@ struct SettingsView: View {
                         .tracking(1)
                 }
 
-                // Mode section
+                // Adventure Mode section — active-journey lifecycle controls.
                 Section {
-                    HStack {
-                        Text("Current Adventure")
-                            .font(.system(size: 12, design: .monospaced))
-                        Spacer()
-                        Text((appState.settings.activeMode ?? .freeWalk).displayName.uppercased())
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundStyle(TrailColor.coral)
-                    }
-
-                    Button(
-                        appState.settings.activeMode == .journey ? "Switch to Free Walk" : "Switch to Journeys"
-                    ) {
-                        appState.settings.activeMode = appState.settings.activeMode == .journey ? .freeWalk : .journey
-                        appState.saveSettings()
-                    }
-                    .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
+                    adventureModeRows
                 } header: {
                     Text("ADVENTURE MODE")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -184,7 +183,78 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(TrailColor.parchment)
-        .navigationTitle("Camp")
+        .navigationTitle("Settings")
+        .confirmationDialog(
+            "Abandon this journey? Progress moves to history.",
+            isPresented: $showAbandonConfirm
+        ) {
+            Button("Abandon", role: .destructive) {
+                appState.journeyEngine.abandon()
+            }
+            Button("Keep hiking", role: .cancel) {}
+        }
+    }
+
+    // MARK: - Adventure Mode rows
+
+    @ViewBuilder
+    private var adventureModeRows: some View {
+        if let journey = appState.journeyStore.active,
+           let trail = TrailCatalog.trail(for: journey.trailID) {
+            let paused = !journey.isTrackingEnabled
+            let progressPct = Int((journey.progressPercentage * 100).rounded())
+
+            HStack {
+                Text("Active Trail")
+                    .font(.system(size: 12, design: .monospaced))
+                Spacer()
+                Text(trail.name.uppercased())
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .foregroundStyle(TrailColor.coral)
+            }
+
+            HStack {
+                Text("Progress")
+                    .font(.system(size: 12, design: .monospaced))
+                Spacer()
+                Text("\(progressPct)% · \(appState.settings.distanceValueString(miles: journey.milesTraveled)) / \(appState.settings.distanceValueString(miles: trail.totalMiles, decimals: 0)) \(appState.settings.distanceUnitShort)")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(TrailColor.text.opacity(0.7))
+            }
+
+            HStack {
+                Text("Status")
+                    .font(.system(size: 12, design: .monospaced))
+                Spacer()
+                Text(paused ? "PAUSED" : "HIKING")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(paused ? TrailColor.desertSand : TrailColor.forestGreen)
+                    .tracking(1)
+            }
+
+            HStack(spacing: 10) {
+                Button(paused ? "Resume Journey" : "Pause Journey") {
+                    appState.journeyEngine.setTrackingEnabled(paused)
+                }
+                .buttonStyle(RetroSecondaryButtonStyle())
+
+                Button("Abandon Journey") {
+                    showAbandonConfirm = true
+                }
+                .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
+            }
+        } else {
+            HStack {
+                Text("No active trail.")
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(TrailColor.text.opacity(0.7))
+                Spacer()
+                if let onOpenTrail {
+                    Button("Start a Journey") { onOpenTrail() }
+                        .buttonStyle(RetroButtonStyle(tint: TrailColor.coral))
+                }
+            }
+        }
     }
 
     private func formatHour(_ hour: Int) -> String {

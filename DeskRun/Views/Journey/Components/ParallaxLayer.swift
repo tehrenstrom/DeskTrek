@@ -1,8 +1,8 @@
 import SwiftUI
 import AppKit
 
-/// Horizontally tiles a pixel-art image across a given width, offset by `scrollOffset`.
-/// Caller provides a scrolling speed multiplier via the offset it passes in.
+/// Horizontally tiles a pixel-art layer across the available width, offset by
+/// `scrollOffset`. Resolves art from `PixelArtRegistry` first, then Assets.xcassets.
 struct ParallaxLayer: View {
     let assetName: String
     let width: CGFloat
@@ -12,7 +12,22 @@ struct ParallaxLayer: View {
 
     var body: some View {
         GeometryReader { geo in
-            if let image = NSImage(named: assetName) {
+            if let sprite = PixelArtRegistry.all[assetName] {
+                // Tile width matches the sprite's aspect ratio so it draws unstretched.
+                let tileWidth = height * sprite.aspectRatio
+                let modOffset = scrollOffset.truncatingRemainder(dividingBy: tileWidth)
+                let start = -tileWidth - modOffset
+                let tileCount = Int(ceil((geo.size.width + tileWidth * 2) / tileWidth))
+                HStack(spacing: 0) {
+                    ForEach(0..<tileCount, id: \.self) { _ in
+                        PixelSpriteView(sprite: sprite)
+                            .frame(width: tileWidth, height: height)
+                    }
+                }
+                .offset(x: start)
+                .frame(width: geo.size.width, height: height, alignment: .leading)
+                .clipped()
+            } else if let image = NSImage(named: assetName) {
                 let tileWidth = width > 0 ? width : max(image.size.width, 256)
                 let modOffset = scrollOffset.truncatingRemainder(dividingBy: tileWidth)
                 let start = -tileWidth - modOffset

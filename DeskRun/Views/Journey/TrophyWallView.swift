@@ -3,20 +3,28 @@ import SwiftUI
 struct TrophyWallView: View {
     let appState: AppState
 
+    private var portraits: [TrailPortrait] {
+        appState.journeyStore.portraits.sorted { $0.collectedAt > $1.collectedAt }
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 22) {
                 Text("TROPHY WALL")
                     .font(.system(size: 20, weight: .black, design: .monospaced))
                     .foregroundStyle(TrailColor.darkEarth)
                     .tracking(3)
 
-                if appState.journeyStore.trophies.isEmpty {
+                if appState.journeyStore.trophies.isEmpty && portraits.isEmpty {
                     emptyState
-                } else {
-                    ForEach(appState.journeyStore.trophies) { trophy in
-                        trophyRow(trophy)
-                    }
+                }
+
+                if !portraits.isEmpty {
+                    portraitsSection
+                }
+
+                if !appState.journeyStore.trophies.isEmpty {
+                    certificatesSection
                 }
             }
             .padding(24)
@@ -32,15 +40,89 @@ struct TrophyWallView: View {
             Image(systemName: "rosette")
                 .font(.system(size: 40))
                 .foregroundStyle(TrailColor.text.opacity(0.25))
-            Text("No trails completed yet")
+            Text("Nothing collected yet")
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.6))
-            Text("Complete a journey and your certificate will appear here.")
+            Text("Pass a landmark on the trail and its portrait arrives here. Finish the trail and you earn a certificate.")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.4))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 380)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
+    }
+
+    // MARK: - Portraits
+
+    private var portraitsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("TRAIL PORTRAITS", subtitle: "\(portraits.count) collected")
+
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 130, maximum: 200), spacing: 14)],
+                spacing: 14
+            ) {
+                ForEach(portraits) { portrait in
+                    portraitCard(portrait)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func portraitCard(_ portrait: TrailPortrait) -> some View {
+        let trail = TrailCatalog.trail(for: portrait.trailID)
+        let landmark = trail?.landmarks.first(where: { $0.id == portrait.landmarkID })
+
+        VStack(spacing: 6) {
+            // Framed portrait with subtle matte
+            ZStack {
+                Rectangle()
+                    .fill(TrailColor.parchment)
+                    .overlay(
+                        Rectangle()
+                            .strokeBorder(TrailColor.darkEarth.opacity(0.4), lineWidth: 1)
+                    )
+                    .aspectRatio(1, contentMode: .fit)
+
+                PixelImage(assetName: landmark?.spriteAsset ?? "", size: 88)
+                    .padding(6)
+            }
+            .aspectRatio(1, contentMode: .fit)
+
+            Text((landmark?.name ?? "Unknown Landmark").uppercased())
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(TrailColor.darkEarth)
+                .tracking(1)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+
+            Text((trail?.name ?? portrait.trailID))
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.55))
+
+            Text(formattedDate(portrait.collectedAt))
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.45))
+        }
+        .padding(10)
+        .background(TrailColor.parchment)
+        .overlay(
+            Rectangle()
+                .strokeBorder(TrailColor.coral.opacity(0.6), lineWidth: 2)
+        )
+    }
+
+    // MARK: - Certificates
+
+    private var certificatesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("CERTIFICATES", subtitle: "\(appState.journeyStore.trophies.count) earned")
+            ForEach(appState.journeyStore.trophies) { trophy in
+                trophyRow(trophy)
+            }
+        }
     }
 
     private func trophyRow(_ trophy: Certificate) -> some View {
@@ -59,7 +141,7 @@ struct TrophyWallView: View {
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .foregroundStyle(TrailColor.darkEarth)
                     .tracking(1)
-                Text(String(format: "%.0f mi  \u{00B7}  %d days  \u{00B7}  \(formattedDate(trophy.completedAt))", trophy.totalMiles, trophy.totalDays))
+                Text("\(appState.settings.distanceString(miles: trophy.totalMiles, decimals: 0))  \u{00B7}  \(trophy.totalDays) days  \u{00B7}  \(formattedDate(trophy.completedAt))")
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(TrailColor.text.opacity(0.6))
                 if !trophy.earnedBadgeIDs.isEmpty {
@@ -79,6 +161,21 @@ struct TrophyWallView: View {
             }
         }
         .retroPanel()
+    }
+
+    // MARK: - Shared
+
+    private func sectionHeader(_ title: String, subtitle: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(TrailColor.darkEarth)
+                .tracking(2)
+            Text(subtitle)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(TrailColor.text.opacity(0.55))
+            Spacer()
+        }
     }
 
     private func pdfURL(for trophy: Certificate) -> URL? {

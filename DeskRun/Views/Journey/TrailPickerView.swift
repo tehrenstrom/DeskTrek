@@ -15,7 +15,7 @@ struct TrailPickerView: View {
                     .foregroundStyle(TrailColor.darkEarth)
                     .tracking(3)
 
-                Text("Each trail is a long, gamified hike. You'll pass landmarks, meet encounters, and earn a certificate when you complete the miles from your desk.")
+                Text("Each trail is a long, gamified hike. You'll pass landmarks, meet encounters, and earn a certificate when you complete the route from your desk.")
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(TrailColor.text.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
@@ -66,7 +66,7 @@ struct TrailPickerView: View {
                     Text(trail.subtitle)
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(TrailColor.text.opacity(0.6))
-                    Text(String(format: "%.0f miles  \u{00B7}  %d landmarks", trail.totalMiles, trail.landmarks.count))
+                    Text("\(appState.settings.distanceString(miles: trail.totalMiles, decimals: 0))  \u{00B7}  \(trail.landmarks.count) landmarks")
                         .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(TrailColor.mountainBlue)
                 }

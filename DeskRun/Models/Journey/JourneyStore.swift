@@ -9,6 +9,7 @@ final class JourneyStore {
     private(set) var history: [JourneyState] = []
     private(set) var trophies: [Certificate] = []
     private(set) var lifetimeBadgeIDs: Set<String> = []
+    private(set) var portraits: [TrailPortrait] = []
     private(set) var archivedGoals: [Goal] = []
 
     init(dataManager: DataManager) {
@@ -17,6 +18,7 @@ final class JourneyStore {
         self.history = dataManager.loadJourneyHistory()
         self.trophies = dataManager.loadTrophies()
         self.lifetimeBadgeIDs = dataManager.loadLifetimeBadges()
+        self.portraits = dataManager.loadPortraits()
         self.archivedGoals = dataManager.loadArchivedGoals()
     }
 
@@ -51,6 +53,19 @@ final class JourneyStore {
     func addEarnedBadges(_ ids: Set<String>) {
         lifetimeBadgeIDs.formUnion(ids)
         dataManager.saveLifetimeBadges(lifetimeBadgeIDs)
+    }
+
+    // MARK: - Portraits
+
+    /// Add a portrait; silently dedupes if the user already has one for this
+    /// (trail, landmark) pair — re-hiking a trail doesn't produce duplicates.
+    func addPortrait(_ portrait: TrailPortrait) {
+        let alreadyHave = portraits.contains {
+            $0.trailID == portrait.trailID && $0.landmarkID == portrait.landmarkID
+        }
+        guard !alreadyHave else { return }
+        portraits.append(portrait)
+        dataManager.savePortraits(portraits)
     }
 
     // MARK: - Archived goals

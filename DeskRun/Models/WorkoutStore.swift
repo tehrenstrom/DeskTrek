@@ -24,6 +24,11 @@ class WorkoutStore {
         save()
     }
 
+    func replaceWorkouts(_ workouts: [WorkoutRecord]) {
+        self.workouts = workouts.sorted { $0.startDate > $1.startDate }
+        save()
+    }
+
     // MARK: - Queries
 
     var todaysWorkouts: [WorkoutRecord] {

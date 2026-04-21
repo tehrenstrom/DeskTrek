@@ -3,6 +3,10 @@ import Charts
 
 struct DashboardView: View {
     let appState: AppState
+    /// Routes the "active journey" strip to the Trail sidebar item. When nil,
+    /// the strip is read-only (no tap target).
+    var onOpenTrail: (() -> Void)? = nil
+
     @State private var selectedPeriod: StatsPeriod = .day
     @State private var chartDays: Int = 7
 
@@ -40,6 +44,14 @@ struct DashboardView: View {
             VStack(spacing: 16) {
                 // Trail banner
                 trailBanner
+                    .padding(.horizontal)
+
+                // Free Walk control — always a free walk, never counts toward an active journey.
+                FreeWalkControlCard(appState: appState)
+                    .padding(.horizontal)
+
+                // Read-only strip when a journey is active — tap to jump to Trail.
+                activeJourneyStrip
                     .padding(.horizontal)
 
                 // Trail status message
@@ -91,6 +103,53 @@ struct DashboardView: View {
         .navigationTitle("Trail Status")
     }
 
+    // MARK: - Active Journey Strip
+
+    @ViewBuilder
+    private var activeJourneyStrip: some View {
+        if let journey = appState.journeyStore.active,
+           let trail = TrailCatalog.trail(for: journey.trailID) {
+            let paused = !journey.isTrackingEnabled
+            let progressPct = Int((journey.progressPercentage * 100).rounded())
+            let remaining = max(0, trail.totalMiles - journey.milesTraveled)
+
+            Button(action: { onOpenTrail?() }) {
+                HStack(spacing: 10) {
+                    Image(systemName: paused ? "pause.circle.fill" : "mountain.2.fill")
+                        .foregroundStyle(paused ? TrailColor.desertSand : TrailColor.coral)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(trail.name.uppercased())
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(TrailColor.darkEarth)
+                            .tracking(1.5)
+                        Text(paused
+                             ? "PAUSED · \(progressPct)% · \(appState.settings.distanceString(miles: remaining, decimals: 0)) TO GO"
+                             : "\(progressPct)% · \(appState.settings.distanceString(miles: remaining, decimals: 0)) TO GO")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundStyle(TrailColor.text.opacity(0.65))
+                            .tracking(1)
+                    }
+                    Spacer()
+                    if onOpenTrail != nil {
+                        Text("OPEN TRAIL →")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundStyle(TrailColor.coral)
+                            .tracking(1)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(TrailColor.parchment)
+                .overlay(
+                    Rectangle()
+                        .strokeBorder(TrailColor.darkEarth.opacity(0.5), lineWidth: 1.5)
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(onOpenTrail == nil)
+        }
+    }
+
     // MARK: - Trail Banner
 
     @ViewBuilder
@@ -123,16 +182,8 @@ struct DashboardView: View {
     @ViewBuilder
     private var trailStatusPanel: some View {
         let todayStats = appState.statsCalculator.todayStats
-        let useMetric = appState.settings.useMetric
         let distanceStr = appState.settings.distanceString(todayStats.distance)
-        let speedStr: String = {
-            let speed = todayStats.averageSpeed
-            if useMetric {
-                return String(format: "%.1f km/h", speed)
-            } else {
-                return String(format: "%.1f mph", speed / 1.60934)
-            }
-        }()
+        let speedStr = appState.settings.speedString(todayStats.averageSpeed)
 
         VStack(spacing: 6) {
             RetroSectionHeader(title: "Trail Status")

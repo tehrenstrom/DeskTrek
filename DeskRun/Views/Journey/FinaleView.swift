@@ -61,6 +61,7 @@ struct FinaleView: View {
         if let url = CertificateRenderer.render(
             certificate: certificate,
             trail: trail,
+            settings: appState.settings,
             dataManager: appState.dataManager
         ) {
             pdfURL = url

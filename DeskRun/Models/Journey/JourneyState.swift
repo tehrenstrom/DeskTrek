@@ -105,6 +105,31 @@ struct JourneyChoice: Codable, Hashable {
     let milesAtDecision: Double
 }
 
+/// A souvenir captured the first time the hiker crosses a landmark. Earned
+/// automatically during a journey and displayed in the Trophy Wall alongside
+/// completion certificates. Lifetime-scoped — deduped per (trail, landmark).
+struct TrailPortrait: Codable, Identifiable, Hashable {
+    let id: UUID
+    let trailID: String
+    let landmarkID: String
+    let collectedAt: Date
+    let journeyID: UUID
+
+    init(
+        id: UUID = UUID(),
+        trailID: String,
+        landmarkID: String,
+        collectedAt: Date = Date(),
+        journeyID: UUID
+    ) {
+        self.id = id
+        self.trailID = trailID
+        self.landmarkID = landmarkID
+        self.collectedAt = collectedAt
+        self.journeyID = journeyID
+    }
+}
+
 struct Certificate: Codable, Identifiable {
     let id: UUID
     let trailID: String

@@ -87,7 +87,7 @@ struct TrailJournalRow: View {
             HStack(spacing: 14) {
                 journalStat(settings.distanceString(workout.distance), icon: "map")
                 journalStat("\(workout.steps)", icon: "shoeprints.fill")
-                journalStat(String(format: "%.1f km/h", workout.averageSpeed), icon: "speedometer")
+                journalStat(settings.speedString(workout.averageSpeed), icon: "speedometer")
                 journalStat("\(workout.calories) kcal", icon: "flame")
             }
         }

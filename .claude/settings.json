@@ -10,7 +10,17 @@
       "Bash(xcodebuild -project /Users/travisehrenstrom/Developer/DeskRun/DeskRun.xcodeproj -scheme DeskRun -configuration Debug -destination 'platform=macOS' build)",
       "Bash(xcodebuild -project DeskRun.xcodeproj -scheme DeskRun -configuration Debug build -quiet)",
       "Bash(xcodebuild -project DeskRun.xcodeproj -scheme DeskRun -configuration Debug build)",
-      "Bash(git -C /Users/travisehrenstrom/Developer/DeskRun status)"
+      "Bash(git -C /Users/travisehrenstrom/Developer/DeskRun status)",
+      "Bash(xcodebuild -project DeskRun.xcodeproj -scheme DeskRun -configuration Debug clean build)",
+      "Bash(xcodebuild -project DeskRun.xcodeproj -scheme DeskRun -configuration Debug -destination 'platform=macOS' build)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git add *)"
+    ],
+    "additionalDirectories": [
+      "/Users/travisehrenstrom/Library/Developer/Xcode/DerivedData/DeskRun-gyyutcvpwdjwimduwvxruztppgsz"
     ]
   }
 }

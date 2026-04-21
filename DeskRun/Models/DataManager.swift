@@ -25,6 +25,7 @@ class DataManager {
     private var journeyHistoryURL: URL { journeysDir.appendingPathComponent("history.json") }
     private var trophiesURL: URL { journeysDir.appendingPathComponent("trophies.json") }
     private var lifetimeBadgesURL: URL { journeysDir.appendingPathComponent("badges.json") }
+    private var portraitsURL: URL { journeysDir.appendingPathComponent("portraits.json") }
     private var archivedGoalsURL: URL { journeysDir.appendingPathComponent("archive.json") }
 
     var certificatesDir: URL {
@@ -112,6 +113,14 @@ class DataManager {
 
     func saveLifetimeBadges(_ badgeIDs: Set<String>) {
         save(badgeIDs, to: lifetimeBadgesURL)
+    }
+
+    func loadPortraits() -> [TrailPortrait] {
+        load(from: portraitsURL) ?? []
+    }
+
+    func savePortraits(_ portraits: [TrailPortrait]) {
+        save(portraits, to: portraitsURL)
     }
 
     func loadArchivedGoals() -> [Goal] {

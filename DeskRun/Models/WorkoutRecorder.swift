@@ -16,14 +16,16 @@ class WorkoutRecorder {
     private var currentWorkoutStart: Date?
     private var lastNonZeroSpeed: Date?
     private var zeroSpeedTimer: Timer?
-    private var sessionDistance: Double = 0
-    private var sessionSteps: Int = 0
-    private var sessionCalories: Int = 0
-    private var sessionDuration: TimeInterval = 0
+    private(set) var sessionDistance: Double = 0
+    private(set) var sessionSteps: Int = 0
+    private(set) var sessionCalories: Int = 0
+    private(set) var sessionDuration: TimeInterval = 0
     private var lastObservedDistance: Double?
     private var lastObservedSteps: Int?
     private var lastObservedCalories: Int?
     private var lastObservedDuration: TimeInterval?
+    private var lastAccumulateAt: Date?
+    private var lastConnectionStatus: ConnectionStatus = .disconnected
 
     private static let stopDelay: TimeInterval = 30  // seconds of zero speed before auto-stop
     private static let minimumActiveSpeed = 0.05
@@ -42,6 +44,17 @@ class WorkoutRecorder {
 
     /// Call this on every BLE state update
     func handleStateUpdate() {
+        // On reconnect (and on first connect), treat this tick as a fresh
+        // observation: the treadmill may have reset its odometer to zero, or
+        // replayed its remembered distance, or both. Either way we can't
+        // trust the delta across the disconnect — rebase from the current
+        // values without accumulating anything this tick.
+        let currentStatus = treadmillState.connectionStatus
+        if lastConnectionStatus != .connected && currentStatus == .connected && isRecording {
+            rebaseObservations()
+        }
+        lastConnectionStatus = currentStatus
+
         let sessionAdvanced = isRecording ? accumulateSessionMetrics() : false
         let hasActivitySignal = treadmillState.isRunning
             || treadmillState.currentSpeed > Self.minimumActiveSpeed
@@ -74,12 +87,21 @@ class WorkoutRecorder {
         sessionSteps = 0
         sessionCalories = 0
         sessionDuration = 0
+        rebaseObservations()
+        SoundManager.shared.playWorkoutStarted()
+        print("🏃 Workout recording started")
+    }
+
+    /// Snapshot the current treadmill counters as the baseline so the next
+    /// `accumulateSessionMetrics` call emits zero deltas. Used at session
+    /// start and after a BLE reconnect (where the treadmill may have reset
+    /// or replayed values we'd otherwise double-count).
+    private func rebaseObservations() {
         lastObservedDistance = treadmillState.distance
         lastObservedSteps = treadmillState.steps
         lastObservedCalories = treadmillState.calories
         lastObservedDuration = treadmillState.duration
-        SoundManager.shared.playWorkoutStarted()
-        print("🏃 Workout recording started")
+        lastAccumulateAt = Date()
     }
 
     func stopRecording() {
@@ -93,16 +115,31 @@ class WorkoutRecorder {
         let fallbackDuration = max(0, endDate.timeIntervalSince(startDate))
         let recordedDuration = max(sessionDuration, fallbackDuration)
 
+        // Final safety clamp: if the distance/duration ratio still implies a
+        // physically impossible speed, cap distance to what the duration can
+        // plausibly cover. This guards against BLE firmware quirks that slip
+        // past the per-tick checks.
+        var recordedDistance = sessionDistance
+        var recordedSpeed: Double = 0
+        if recordedDuration > 0 {
+            let rawSpeed = sessionDistance / (recordedDuration / 3600)
+            if rawSpeed > WorkoutSanity.maxPlausibleSpeedKmh {
+                recordedDistance = WorkoutSanity.maxPlausibleSpeedKmh * (recordedDuration / 3600)
+                recordedSpeed = WorkoutSanity.maxPlausibleSpeedKmh
+                print("⚠️ Clamped workout speed from \(String(format: "%.1f", rawSpeed)) km/h to cap (\(WorkoutSanity.maxPlausibleSpeedKmh) km/h)")
+            } else {
+                recordedSpeed = rawSpeed
+            }
+        }
+
         let workout = WorkoutRecord(
             startDate: startDate,
             endDate: endDate,
-            distance: sessionDistance,
+            distance: recordedDistance,
             steps: sessionSteps,
             calories: sessionCalories,
             duration: recordedDuration,
-            averageSpeed: recordedDuration > 0
-                ? sessionDistance / (recordedDuration / 3600)
-                : 0,
+            averageSpeed: recordedSpeed,
             journeyID: activeJourneyID
         )
 
@@ -135,6 +172,7 @@ class WorkoutRecorder {
         lastObservedSteps = nil
         lastObservedCalories = nil
         lastObservedDuration = nil
+        lastAccumulateAt = nil
 
         // Clear walk context so the next auto-start defaults to a free walk.
         walkSession?.markFreeWalk()
@@ -160,19 +198,45 @@ class WorkoutRecorder {
     @discardableResult
     private func accumulateSessionMetrics() -> Bool {
         var advanced = false
+        let now = Date()
+        let wallDelta = lastAccumulateAt.map { now.timeIntervalSince($0) } ?? 0
+        lastAccumulateAt = now
 
+        // Duration first — it's the denominator we use to sanity-check distance.
+        // Reject negative deltas (odometer reset) and implausibly large jumps
+        // that exceed the wall-clock gap (+2s slack for BLE jitter).
+        var acceptedDurationDelta: TimeInterval = 0
+        if let lastObservedDuration {
+            let raw = treadmillState.duration - lastObservedDuration
+            if raw > 0 && (wallDelta <= 0 || raw <= wallDelta + 2.0) {
+                acceptedDurationDelta = raw
+                sessionDuration += raw
+                advanced = advanced || raw > 0
+            }
+        }
+        lastObservedDuration = treadmillState.duration
+
+        // Distance — only accept positive deltas, and cap at the physical
+        // maximum given the time elapsed. This is what saves us from the
+        // "BLE replayed the odometer" class of bug where a reconnect slips
+        // an enormous distance delta through without any duration delta.
         if let lastObservedDistance {
-            let distanceDelta = treadmillState.distance - lastObservedDistance
-            if distanceDelta >= 0 {
-                sessionDistance += distanceDelta
-                advanced = advanced || distanceDelta > 0.0001
+            let raw = treadmillState.distance - lastObservedDistance
+            if raw > 0 {
+                let referenceSeconds = max(acceptedDurationDelta, wallDelta)
+                let cap = WorkoutSanity.maxPlausibleSpeedKmh * (referenceSeconds / 3600.0)
+                let accepted = referenceSeconds > 0 ? min(raw, cap) : 0
+                if accepted > 0 {
+                    sessionDistance += accepted
+                    advanced = advanced || accepted > 0.0001
+                }
             }
         }
         lastObservedDistance = treadmillState.distance
 
         if let lastObservedSteps {
             let stepDelta = treadmillState.steps - lastObservedSteps
-            if stepDelta >= 0 {
+            if stepDelta > 0 {
                 sessionSteps += stepDelta
                 advanced = advanced || stepDelta > 0
             }
@@ -181,21 +245,12 @@ class WorkoutRecorder {
 
         if let lastObservedCalories {
             let calorieDelta = treadmillState.calories - lastObservedCalories
-            if calorieDelta >= 0 {
+            if calorieDelta > 0 {
                 sessionCalories += calorieDelta
                 advanced = advanced || calorieDelta > 0
             }
         }
         lastObservedCalories = treadmillState.calories
-
-        if let lastObservedDuration {
-            let durationDelta = treadmillState.duration - lastObservedDuration
-            if durationDelta >= 0 {
-                sessionDuration += durationDelta
-                advanced = advanced || durationDelta > 0
-            }
-        }
-        lastObservedDuration = treadmillState.duration
 
         return advanced
     }

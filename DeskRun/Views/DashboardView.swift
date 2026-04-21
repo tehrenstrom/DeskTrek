@@ -186,10 +186,10 @@ struct DashboardView: View {
         let speedStr = appState.settings.speedString(todayStats.averageSpeed)
 
         VStack(spacing: 6) {
-            RetroSectionHeader(title: "Trail Status")
+            RetroSectionHeader(title: "Today")
 
             VStack(spacing: 4) {
-                RetroStatRow(label: "Speed", value: speedStr)
+                RetroStatRow(label: "Avg Speed", value: speedStr)
                 RetroStatRow(label: "Distance", value: distanceStr)
                 RetroStatRow(label: "Time", value: todayStats.formattedDuration)
                 RetroStatRow(label: "Calories", value: "\(todayStats.calories) kcal")

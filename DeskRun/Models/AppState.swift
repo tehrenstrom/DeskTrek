@@ -78,6 +78,12 @@ class AppState {
             settings.portraitBackfillCompleted = true
             dataManager.saveSettings(settings)
         }
+
+        if !settings.workoutSpeedSanitizationCompleted {
+            WorkoutSpeedSanitizationMigration.run(workoutStore: workoutStore)
+            settings.workoutSpeedSanitizationCompleted = true
+            dataManager.saveSettings(settings)
+        }
         self.settings = settings
 
         // Wire up auto-recording AND journey tick

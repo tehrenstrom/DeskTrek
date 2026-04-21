@@ -1,5 +1,13 @@
 import Foundation
 
+/// Physical-plausibility bounds used to sanitize treadmill readings and saved
+/// workouts. A desk treadmill tops out well under 10 km/h; anything above that
+/// is BLE noise, a replayed odometer, or a migration artifact.
+enum WorkoutSanity {
+    /// Upper bound on walking speed we'll trust. Values above this are clamped.
+    static let maxPlausibleSpeedKmh: Double = 10.0
+}
+
 struct WorkoutRecord: Codable, Identifiable {
     let id: UUID
     let startDate: Date

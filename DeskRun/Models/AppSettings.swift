@@ -19,6 +19,7 @@ struct AppSettings: Codable {
     var journeyMigrationCompleted: Bool = false
     var journeyWorkoutBackfillCompleted: Bool = false
     var portraitBackfillCompleted: Bool = false
+    var workoutSpeedSanitizationCompleted: Bool = false
 
     // Convenience
 

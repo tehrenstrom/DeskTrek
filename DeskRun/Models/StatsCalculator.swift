@@ -8,10 +8,12 @@ struct PeriodStats {
     var calories: Int = 0
     var workoutCount: Int = 0
 
-    var averageSpeed: Double {
-        guard duration > 0 else { return 0 }
-        return distance / (duration / 3600)
-    }
+    /// Distance-weighted mean of each workout's own `averageSpeed`, ignoring
+    /// records with zero duration. We don't recompute from the aggregate
+    /// `distance / duration` because legacy backfill migrations inserted
+    /// records with real distance and zero duration, which made the naive
+    /// ratio explode to absurd values (> 100 mph) on the dashboard.
+    var averageSpeed: Double = 0
 
     var formattedDuration: String {
         let hours = Int(duration) / 3600
@@ -127,12 +129,26 @@ class StatsCalculator {
     private func aggregate(_ workouts: [WorkoutRecord]) -> PeriodStats {
         var stats = PeriodStats()
         stats.workoutCount = workouts.count
+        var weightedSpeedNumerator: Double = 0
+        var weightedSpeedDenominator: Double = 0
         for w in workouts {
             stats.distance += w.distance
             stats.duration += w.duration
             stats.steps += w.steps
             stats.calories += w.calories
+
+            // Only records with a real duration contribute to average speed.
+            // Weight each record's own average by its duration so longer walks
+            // count more than brief ones, and clamp implausible outliers.
+            if w.duration > 0 {
+                let recordSpeed = min(max(w.averageSpeed, 0), WorkoutSanity.maxPlausibleSpeedKmh)
+                weightedSpeedNumerator += recordSpeed * w.duration
+                weightedSpeedDenominator += w.duration
+            }
         }
+        stats.averageSpeed = weightedSpeedDenominator > 0
+            ? weightedSpeedNumerator / weightedSpeedDenominator
+            : 0
         return stats
     }
 

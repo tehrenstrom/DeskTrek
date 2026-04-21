@@ -8,44 +8,42 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        ZStack {
-            RetroBackground()
-
-            Group {
-                if groupedWorkouts.isEmpty {
-                    emptyState
-                } else {
-                    List {
-                        ForEach(groupedWorkouts, id: \.date) { group in
-                            Section {
-                                ForEach(group.workouts) { workout in
-                                    TrailJournalRow(workout: workout, settings: appState.settings)
-                                        .listRowBackground(TrailColor.parchment.opacity(0.5))
+        Group {
+            if groupedWorkouts.isEmpty {
+                emptyState
+            } else {
+                List {
+                    ForEach(groupedWorkouts, id: \.date) { group in
+                        Section {
+                            ForEach(group.workouts) { workout in
+                                TrailJournalRow(workout: workout, settings: appState.settings)
+                                    .listRowBackground(TrailColor.parchment.opacity(0.5))
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    appState.workoutStore.deleteWorkout(id: group.workouts[index].id)
                                 }
-                                .onDelete { indexSet in
-                                    for index in indexSet {
-                                        appState.workoutStore.deleteWorkout(id: group.workouts[index].id)
-                                    }
-                                }
-                            } header: {
-                                HStack {
-                                    Text(group.date, style: .date)
-                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                        .foregroundStyle(TrailColor.text)
-                                    Spacer()
-                                    let dayTotal = group.workouts.reduce(0.0) { $0 + $1.distance }
-                                    Text(appState.settings.distanceString(dayTotal))
-                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                        .foregroundStyle(TrailColor.text.opacity(0.6))
-                                }
+                            }
+                        } header: {
+                            HStack {
+                                Text(group.date, style: .date)
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(TrailColor.text)
+                                Spacer()
+                                let dayTotal = group.workouts.reduce(0.0) { $0 + $1.distance }
+                                Text(appState.settings.distanceString(dayTotal))
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(TrailColor.text.opacity(0.6))
                             }
                         }
                     }
-                    .listStyle(.inset(alternatesRowBackgrounds: true))
-                    .scrollContentBackground(.hidden)
                 }
+                .listStyle(.inset(alternatesRowBackgrounds: true))
+                .scrollContentBackground(.hidden)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(TrailColor.parchment)
         .navigationTitle("Trail Journal")
     }
 

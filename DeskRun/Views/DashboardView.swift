@@ -36,62 +36,58 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        ZStack {
-            RetroBackground()
-
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Trail banner
-                    trailBanner
-                        .padding(.horizontal)
-
-                    // Trail status message
-                    Text(trailMessage)
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
-                        .foregroundStyle(TrailColor.text.opacity(0.8))
-                        .italic()
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.horizontal)
-
-                    // Trail Status panel (stats)
-                    trailStatusPanel
-                        .padding(.horizontal)
-
-                    // Streak campfire
-                    streakDisplay
-                        .padding(.horizontal)
-
-                    // Today's progress bar
-                    todayGoalSection
-                        .padding(.horizontal)
-
-                    // Journey progress
-                    journeyProgressSection
-                        .padding(.horizontal)
-
-                    // Period selector + stats cards
-                    VStack(alignment: .leading, spacing: 12) {
-                        Picker("Period", selection: $selectedPeriod) {
-                            ForEach(StatsPeriod.allCases, id: \.self) { period in
-                                Text(period.rawValue).tag(period)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 400)
-
-                        statsCards
-                    }
+        ScrollView {
+            VStack(spacing: 16) {
+                // Trail banner
+                trailBanner
                     .padding(.horizontal)
 
-                    // Chart
-                    chartSection
-                        .padding(.horizontal)
+                // Trail status message
+                Text(trailMessage)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundStyle(TrailColor.text.opacity(0.8))
+                    .italic()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal)
 
-                    Spacer()
+                // Trail Status panel (stats)
+                trailStatusPanel
+                    .padding(.horizontal)
+
+                // Streak campfire
+                streakDisplay
+                    .padding(.horizontal)
+
+                // Today's progress bar
+                todayGoalSection
+                    .padding(.horizontal)
+
+                // Journey progress
+                journeyProgressSection
+                    .padding(.horizontal)
+
+                // Period selector + stats cards
+                VStack(alignment: .leading, spacing: 12) {
+                    Picker("Period", selection: $selectedPeriod) {
+                        ForEach(StatsPeriod.allCases, id: \.self) { period in
+                            Text(period.rawValue).tag(period)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 400)
+
+                    statsCards
                 }
-                .padding(.vertical)
+                .padding(.horizontal)
+
+                // Chart
+                chartSection
+                    .padding(.horizontal)
             }
+            .padding(.vertical)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(TrailColor.parchment)
         .navigationTitle("Trail Status")
     }
 
@@ -344,6 +340,24 @@ struct DashboardView: View {
                     )
                 )
                 .cornerRadius(2)
+            }
+            .chartXAxis {
+                AxisMarks { _ in
+                    AxisGridLine().foregroundStyle(TrailColor.darkEarth.opacity(0.15))
+                    AxisTick().foregroundStyle(TrailColor.darkEarth.opacity(0.4))
+                    AxisValueLabel()
+                        .foregroundStyle(TrailColor.text.opacity(0.7))
+                        .font(.system(size: 9, design: .monospaced))
+                }
+            }
+            .chartYAxis {
+                AxisMarks { _ in
+                    AxisGridLine().foregroundStyle(TrailColor.darkEarth.opacity(0.15))
+                    AxisTick().foregroundStyle(TrailColor.darkEarth.opacity(0.4))
+                    AxisValueLabel()
+                        .foregroundStyle(TrailColor.text.opacity(0.7))
+                        .font(.system(size: 9, design: .monospaced))
+                }
             }
             .chartYAxisLabel(appState.settings.distanceUnitShort)
             .frame(height: 180)

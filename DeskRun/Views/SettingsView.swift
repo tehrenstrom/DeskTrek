@@ -4,10 +4,7 @@ struct SettingsView: View {
     let appState: AppState
 
     var body: some View {
-        ZStack {
-            RetroBackground()
-
-            Form {
+        Form {
                 // Treadmill section
                 Section {
                     HStack {
@@ -157,10 +154,11 @@ struct SettingsView: View {
                         .foregroundStyle(TrailColor.text)
                         .tracking(1)
                 }
-            }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
         }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(TrailColor.parchment)
         .navigationTitle("Camp")
     }
 

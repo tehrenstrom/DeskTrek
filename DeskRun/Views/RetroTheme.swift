@@ -213,18 +213,16 @@ struct RetroStatRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
                 .foregroundStyle(TrailColor.text)
-            Spacer()
-                .overlay(
-                    Text(String(repeating: ".", count: 40))
-                        .font(.system(size: 13, weight: .regular, design: .monospaced))
-                        .foregroundStyle(TrailColor.darkEarth.opacity(0.3))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                )
+            Text(String(repeating: ".", count: 60))
+                .font(.system(size: 13, weight: .regular, design: .monospaced))
+                .foregroundStyle(TrailColor.darkEarth.opacity(0.3))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .layoutPriority(-1)
             Text(value)
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .foregroundStyle(TrailColor.text)
@@ -237,18 +235,7 @@ struct RetroStatRow: View {
 
 struct RetroBackground: View {
     var body: some View {
-        ZStack {
-            TrailColor.parchment
-            // Subtle parchment texture using scanlines
-            VStack(spacing: 3) {
-                ForEach(0..<200, id: \.self) { _ in
-                    Rectangle()
-                        .fill(TrailColor.darkEarth.opacity(0.015))
-                        .frame(height: 1)
-                    Spacer().frame(height: 2)
-                }
-            }
-        }
-        .ignoresSafeArea()
+        TrailColor.parchment
+            .ignoresSafeArea()
     }
 }

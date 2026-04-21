@@ -5,11 +5,8 @@ struct ConnectionView: View {
     @ObservedObject var bleManager: TreadmillBLEManager
 
     var body: some View {
-        ZStack {
-            RetroBackground()
-
-            ScrollView {
-                VStack(spacing: 20) {
+        ScrollView {
+            VStack(spacing: 20) {
                     // Outfitter banner
                     RetroSectionHeader(title: "Outfitter")
 
@@ -134,10 +131,11 @@ struct ConnectionView: View {
                             .multilineTextAlignment(.center)
                     }
                     .retroCard()
-                }
-                .padding()
             }
+            .padding()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(TrailColor.parchment)
         .navigationTitle("Outfitter")
     }
 

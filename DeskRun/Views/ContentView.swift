@@ -37,6 +37,7 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 750, minHeight: 550)
+        .preferredColorScheme(.light)
         .onChange(of: appState.treadmillState.connectionStatus) { oldValue, newValue in
             if newValue == .connected && oldValue != .connected {
                 selectedItem = .dashboard
@@ -52,19 +53,14 @@ struct ContentView: View {
         switch item {
         case .dashboard:
             Label("Trail Status", systemImage: "gauge.with.dots.needle.33percent")
-                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .connection:
             Label("Outfitter", systemImage: "antenna.radiowaves.left.and.right")
-                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .goals:
             Label("Provisions", systemImage: "target")
-                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .history:
             Label("Journal", systemImage: "book.closed")
-                .font(.system(size: 13, weight: .medium, design: .monospaced))
         case .settings:
             Label("Camp", systemImage: "tent")
-                .font(.system(size: 13, weight: .medium, design: .monospaced))
         }
     }
 }

@@ -6,11 +6,8 @@ struct GoalsView: View {
     @State private var showingJourneyPicker = false
 
     var body: some View {
-        ZStack {
-            RetroBackground()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
                     // Header
                     HStack {
                         Text("PROVISIONS")
@@ -53,10 +50,11 @@ struct GoalsView: View {
                                 .opacity(0.6)
                         }
                     }
-                }
-                .padding()
             }
+            .padding()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(TrailColor.parchment)
         .navigationTitle("Provisions")
         .sheet(isPresented: $showingAddGoal) {
             AddGoalSheet(appState: appState)

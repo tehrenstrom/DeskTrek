@@ -8,9 +8,23 @@ struct DashboardView: View {
     var onOpenTrail: (() -> Void)? = nil
 
     @State private var selectedPeriod: StatsPeriod = .day
-    @State private var chartDays: Int = 7
 
     private var stats: PeriodStats { appState.statsCalculator.stats(for: selectedPeriod) }
+
+    private var chartDays: Int {
+        switch selectedPeriod {
+        case .day: return 1
+        case .week: return 7
+        case .month: return 30
+        case .year: return 365
+        case .allTime:
+            guard let first = appState.workoutStore.workouts.min(by: { $0.startDate < $1.startDate })?.startDate else {
+                return 30
+            }
+            let days = Calendar.current.dateComponents([.day], from: first, to: Date()).day ?? 30
+            return max(30, days + 1)
+        }
+    }
 
     private var trailMessage: String {
         let dailyGoal = appState.goalManager.activeGoals.first(where: { $0.timeframe == .daily })
@@ -165,7 +179,7 @@ struct DashboardView: View {
                 .frame(height: 50)
                 .clipShape(RoundedRectangle(cornerRadius: 4))
 
-                Text("DESKRUN TRAIL CO.")
+                Text("DESKTREK TRAIL CO.")
                     .font(.system(size: 16, weight: .bold, design: .monospaced))
                     .foregroundStyle(TrailColor.deepBrown)
                     .tracking(3)
@@ -361,19 +375,11 @@ struct DashboardView: View {
     @ViewBuilder
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("TRAIL LOG")
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .foregroundStyle(TrailColor.text)
-                    .tracking(1)
-                Spacer()
-                Picker("Days", selection: $chartDays) {
-                    Text("7 days").tag(7)
-                    Text("30 days").tag(30)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 160)
-            }
+            Text("TRAIL LOG")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(TrailColor.text)
+                .tracking(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             let data = appState.statsCalculator.dailyDistances(last: chartDays)
             let useMetric = appState.settings.useMetric

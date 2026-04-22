@@ -10,7 +10,7 @@ class AppState {
     let workoutStore: WorkoutStore
     let statsCalculator: StatsCalculator
     let workoutRecorder: WorkoutRecorder
-    let notificationManager: DeskRunNotificationManager
+    let notificationManager: DeskTrekNotificationManager
     let journeyStore: JourneyStore
     let journeyEngine: JourneyEngine
     let walkSession: WalkSession
@@ -49,7 +49,7 @@ class AppState {
         self.journeyStore = journeyStore
         self.journeyEngine = journeyEngine
         self.walkSession = walkSession
-        self.notificationManager = DeskRunNotificationManager(
+        self.notificationManager = DeskTrekNotificationManager(
             workoutStore: workoutStore,
             goalManager: goalManager,
             statsCalculator: statsCalculator,

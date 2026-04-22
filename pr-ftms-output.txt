@@ -1,4 +1,0 @@
-Warning: 1 uncommitted change
-https://github.com/tehrenstrom/DeskRun/pull/3
-
-Done at Mon Apr 20 22:17:50 PDT 2026

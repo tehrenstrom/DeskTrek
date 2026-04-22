@@ -7,7 +7,7 @@ class DataManager {
 
     private var appSupportDir: URL {
         let dir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("DeskRun", isDirectory: true)
+            .appendingPathComponent("DeskTrek", isDirectory: true)
         try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }

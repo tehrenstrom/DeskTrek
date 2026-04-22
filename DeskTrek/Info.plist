@@ -3,12 +3,12 @@
 <plist version="1.0">
 <dict>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>DeskRun needs Bluetooth to connect to and control your DeerRun treadmill.</string>
+    <string>DeskTrek needs Bluetooth to connect to and control your treadmill.</string>
     <key>NSHealthShareUsageDescription</key>
-    <string>DeskRun reads your health data to show workout history.</string>
+    <string>DeskTrek reads your health data to show workout history.</string>
     <key>NSHealthUpdateUsageDescription</key>
-    <string>DeskRun saves your treadmill workouts to Apple Health.</string>
+    <string>DeskTrek saves your treadmill workouts to Apple Health.</string>
     <key>NSUserNotificationsUsageDescription</key>
-    <string>DeskRun sends motivational reminders and goal progress updates to help you stay active.</string>
+    <string>DeskTrek sends motivational reminders and goal progress updates to help you stay active.</string>
 </dict>
 </plist>

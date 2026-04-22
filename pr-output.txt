@@ -1,3 +1,0 @@
-Warning: 1 uncommitted change
-a pull request for branch "feature/protocol-adapter-layer" into branch "main" already exists:
-https://github.com/tehrenstrom/DeskRun/pull/1

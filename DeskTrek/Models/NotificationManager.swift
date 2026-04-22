@@ -3,7 +3,7 @@ import Observation
 import UserNotifications
 
 @Observable
-class DeskRunNotificationManager {
+class DeskTrekNotificationManager {
     private let workoutStore: WorkoutStore
     private let goalManager: GoalManager
     private let statsCalculator: StatsCalculator

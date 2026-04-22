@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="DeskRun/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="180" alt="DeskRun — pixel hiker on a treadmill" />
+  <img src="media/desktrek-hero.png" alt="DeskTrek — a digital trek for your treadmill" />
 </p>
 
-# DeskRun
+# DeskTrek
 
 **An open-source macOS walking game that drives your under-desk treadmill.**
 
 > *You set out from your standing desk with a full pack, 211 trail miles ahead, and a treadmill that speaks Bluetooth. Morale is high. Energy is high. A marmot watches from the talus.*
 
-DeskRun pairs with your Bluetooth treadmill and turns every mile you walk into progress along a real-world trail — complete with an animated pixel-art hiker, wildlife drifting past in parallax, encounter choices that shift your morale and energy, and a printable certificate when you reach the summit. It lives in your menu bar, so it never steals your focus from the work you're actually supposed to be doing.
+DeskTrek pairs with your Bluetooth treadmill and turns every mile you walk into progress along a real-world trail — complete with an animated pixel-art hiker, wildlife drifting past in parallax, encounter choices that shift your morale and energy, and a printable certificate when you reach the summit. It lives in your menu bar, so it never steals your focus from the work you're actually supposed to be doing.
 
 ```
      \   |   /           .            .
@@ -42,7 +42,7 @@ Pick a trail and start walking. Your treadmill miles accumulate along a real-wor
 ```
  ___________________________________________
 |                                           |
-|   D E S K R U N      ~  trail status  ~   |
+|   D E S K T R E K    ~  trail status  ~   |
 |___________________________________________|
 |  distance ..... 12.4 mi                   |
 |  morale   ..... [####      ]              |
@@ -87,13 +87,13 @@ Full log of every session — distance, time, steps, calories. Consecutive-day s
  /________\
 ```
 
-- **John Muir Trail** — 211 miles, Yosemite Valley to Mt. Whitney, 8 landmarks, 9 badges, narrative encounters + subquest arcs authored in [DeskRun/Models/Journey/Content/JohnMuirTrail.swift](DeskRun/Models/Journey/Content/JohnMuirTrail.swift).
+- **John Muir Trail** — 211 miles, Yosemite Valley to Mt. Whitney, 8 landmarks, 9 badges, narrative encounters + subquest arcs authored in [DeskTrek/Models/Journey/Content/JohnMuirTrail.swift](DeskTrek/Models/Journey/Content/JohnMuirTrail.swift).
 
-Adding a new trail is a single Swift file plus one line in [DeskRun/Models/Journey/TrailCatalog.swift](DeskRun/Models/Journey/TrailCatalog.swift). Pixel art for landmarks, parallax layers, badges, and the finale scene is drawn programmatically in Swift in [DeskRun/Views/Journey/Art/](DeskRun/Views/Journey/Art/) — no sprite-sheet pipeline, no asset management.
+Adding a new trail is a single Swift file plus one line in [DeskTrek/Models/Journey/TrailCatalog.swift](DeskTrek/Models/Journey/TrailCatalog.swift). Pixel art for landmarks, parallax layers, badges, and the finale scene is drawn programmatically in Swift in [DeskTrek/Views/Journey/Art/](DeskTrek/Views/Journey/Art/) — no sprite-sheet pipeline, no asset management.
 
 ## Supported treadmills
 
-DeskRun speaks four protocol families. If your treadmill shows up over Bluetooth, there's a good chance we've got a wagon hitched for it.
+DeskTrek speaks four protocol families. If your treadmill shows up over Bluetooth, there's a good chance we've got a wagon hitched for it.
 
 ### DeerRun / PitPat
 | Brand / Model | BLE Name | Status |
@@ -109,7 +109,7 @@ DeskRun speaks four protocol families. If your treadmill shows up over Bluetooth
 | Other KingSmith models | `KS-*` | Community-tested |
 
 ### FTMS (Bluetooth Fitness Machine Service)
-The industry standard. If your treadmill advertises the FTMS service UUID, DeskRun will pick it up automatically.
+The industry standard. If your treadmill advertises the FTMS service UUID, DeskTrek will pick it up automatically.
 
 | Brand | Status |
 |---|---|
@@ -144,9 +144,9 @@ Don't see your treadmill? Open an issue with the BLE name and we'll help you sco
 ## Building
 
 ```bash
-git clone https://github.com/travisehrenstrom/DeskRun.git
-cd DeskRun
-open DeskRun.xcodeproj
+git clone https://github.com/tehrenstrom/DeskTrek.git
+cd DeskTrek
+open DeskTrek.xcodeproj
 ```
 
 1. Set your Development Team under **Signing & Capabilities**
@@ -156,10 +156,10 @@ The app requests Bluetooth permissions on first launch.
 
 ## Architecture
 
-DeskRun uses an **adapter pattern** for treadmill support — each protocol family gets an adapter that conforms to `TreadmillAdapter`, and a registry matches discovered BLE devices to the right adapter. Journey Mode is a separate layer on top: a `JourneyEngine` consumes walked distance from `WorkoutRecorder`, advances trail state, triggers landmarks and encounters, and collects trophies.
+DeskTrek uses an **adapter pattern** for treadmill support — each protocol family gets an adapter that conforms to `TreadmillAdapter`, and a registry matches discovered BLE devices to the right adapter. Journey Mode is a separate layer on top: a `JourneyEngine` consumes walked distance from `WorkoutRecorder`, advances trail state, triggers landmarks and encounters, and collects trophies.
 
 ```
-DeskRun/
+DeskTrek/
 ├── Audio/
 │   └── SoundManager.swift              # 8-bit synthesized SFX (AVAudioEngine)
 ├── BLE/
@@ -268,20 +268,20 @@ The FTMS adapter implements the official [Bluetooth Fitness Machine Service](htt
 The trail is better with company.
 
 ### Test with your treadmill
-If you have any Bluetooth treadmill, try DeskRun and report how it works. Even a "it showed up but didn't connect" is valuable intel.
+If you have any Bluetooth treadmill, try DeskTrek and report how it works. Even a "it showed up but didn't connect" is valuable intel.
 
 ### Add a new treadmill adapter
-1. **Create your adapter** — add a new file in [DeskRun/BLE/Adapters/](DeskRun/BLE/Adapters/) (e.g. `YourBrandAdapter.swift`) that conforms to `TreadmillAdapter` in [DeskRun/BLE/TreadmillProtocol.swift](DeskRun/BLE/TreadmillProtocol.swift).
-2. **Register it** — add your adapter to the registry in [DeskRun/Models/AppState.swift](DeskRun/Models/AppState.swift) so DeskRun tries it during discovery.
+1. **Create your adapter** — add a new file in [DeskTrek/BLE/Adapters/](DeskTrek/BLE/Adapters/) (e.g. `YourBrandAdapter.swift`) that conforms to `TreadmillAdapter` in [DeskTrek/BLE/TreadmillProtocol.swift](DeskTrek/BLE/TreadmillProtocol.swift).
+2. **Register it** — add your adapter to the registry in [DeskTrek/Models/AppState.swift](DeskTrek/Models/AppState.swift) so DeskTrek tries it during discovery.
 3. **Add to the Xcode project** — if you create the file through the IDE, Xcode handles `project.pbxproj` for you.
 4. **Submit a PR** — include any BLE traffic captures or protocol notes that'll help future travelers.
 
 ### Add a new trail
-Trails are pure Swift data plus programmatic pixel art. Use [DeskRun/Models/Journey/Content/JohnMuirTrail.swift](DeskRun/Models/Journey/Content/JohnMuirTrail.swift) as the reference shape:
+Trails are pure Swift data plus programmatic pixel art. Use [DeskTrek/Models/Journey/Content/JohnMuirTrail.swift](DeskTrek/Models/Journey/Content/JohnMuirTrail.swift) as the reference shape:
 
 1. **Write the trail content file** — define landmarks, encounters, subquests, and badges. Add flavor text.
-2. **Draw the art** — add parallax layers, landmark sprites, and a finale scene to [DeskRun/Views/Journey/Art/PixelSprites.swift](DeskRun/Views/Journey/Art/PixelSprites.swift) using the `PixelCanvas` DSL. Register them under the sprite keys referenced by your trail.
-3. **Register the trail** — add it to `TrailCatalog.all` in [DeskRun/Models/Journey/TrailCatalog.swift](DeskRun/Models/Journey/TrailCatalog.swift).
+2. **Draw the art** — add parallax layers, landmark sprites, and a finale scene to [DeskTrek/Views/Journey/Art/PixelSprites.swift](DeskTrek/Views/Journey/Art/PixelSprites.swift) using the `PixelCanvas` DSL. Register them under the sprite keys referenced by your trail.
+3. **Register the trail** — add it to `TrailCatalog.all` in [DeskTrek/Models/Journey/TrailCatalog.swift](DeskTrek/Models/Journey/TrailCatalog.swift).
 4. **Submit a PR** — include a note on the route, any historical/cultural context you leaned on, and screenshots of the finale scene.
 
 ### Report bugs

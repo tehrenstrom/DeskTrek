@@ -47,7 +47,7 @@ struct MainShell: View {
             List(MainSidebarItem.allCases, id: \.self, selection: $selectedItem) { item in
                 Label(item.title, systemImage: item.systemImage)
             }
-            .navigationTitle("DeskRun")
+            .navigationTitle("DeskTrek")
             .listStyle(.sidebar)
         } detail: {
             switch selectedItem {

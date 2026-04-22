@@ -16,7 +16,7 @@ import CoreBluetooth
 ///   over bytes [1..20].
 /// - This `FBA0/FBA1/FBA2` variant does not require a per-notification
 ///   heartbeat write to keep telemetry flowing.
-/// - On the `FBA0/FBA1/FBA2` service family used by DeskRun's PitPat path,
+/// - On the `FBA0/FBA1/FBA2` service family used by DeskTrek's PitPat path,
 ///   writes are sent directly as raw packets to `FBA1`. The older FF00-style
 ///   `4D 00 <counter> <len> ...` envelope seen in some references is not used
 ///   on this variant.

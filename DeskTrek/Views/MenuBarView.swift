@@ -295,7 +295,7 @@ struct MenuBarView: View {
     private var footerSection: some View {
         HStack {
             Button(action: { openMainWindow() }) {
-                Label("Open DeskRun", systemImage: "macwindow")
+                Label("Open DeskTrek", systemImage: "macwindow")
             }
             .buttonStyle(.plain)
             .font(.caption)
@@ -337,7 +337,7 @@ struct MenuBarView: View {
 
     private func openMainWindow() {
         NSApplication.shared.activate(ignoringOtherApps: true)
-        if let window = NSApplication.shared.windows.first(where: { $0.title.contains("DeskRun") || $0.isKeyWindow }) {
+        if let window = NSApplication.shared.windows.first(where: { $0.title.contains("DeskTrek") || $0.isKeyWindow }) {
             window.makeKeyAndOrderFront(nil)
         } else {
             // Open a new window if none exist

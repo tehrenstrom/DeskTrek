@@ -157,7 +157,7 @@ struct SettingsView: View {
                 // About section
                 Section {
                     HStack {
-                        Text("DeskRun Trail Co.")
+                        Text("DeskTrek Trail Co.")
                             .font(.system(size: 13, weight: .medium, design: .monospaced))
                         Spacer()
                         Text("v1.0")
@@ -168,7 +168,7 @@ struct SettingsView: View {
                         Text("Camp location")
                             .font(.system(size: 12, design: .monospaced))
                         Spacer()
-                        Text("~/Library/Application Support/DeskRun/")
+                        Text("~/Library/Application Support/DeskTrek/")
                             .font(.system(size: 10, design: .monospaced))
                             .foregroundStyle(.secondary)
                     }

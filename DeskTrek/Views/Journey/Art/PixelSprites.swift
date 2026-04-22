@@ -41,6 +41,57 @@ enum PixelArtRegistry {
         // Finale hero scene
         "finale.jmt": FinaleArt.jmt,
 
+        // Landmarks — Wonderland Trail
+        "landmark.wonder.longmire":           LandmarkArtWonder.longmire,
+        "landmark.wonder.cougar_rock_bridge": LandmarkArtWonder.cougarRockBridge,
+        "landmark.wonder.emerald_ridge":      LandmarkArtWonder.emeraldRidge,
+        "landmark.wonder.klapatche_park":     LandmarkArtWonder.klapatchePark,
+        "landmark.wonder.spray_park":         LandmarkArtWonder.sprayPark,
+        "landmark.wonder.mystic_lake":        LandmarkArtWonder.mysticLake,
+        "landmark.wonder.summerland":         LandmarkArtWonder.summerland,
+        "landmark.wonder.panhandle_gap":      LandmarkArtWonder.panhandleGap,
+
+        // Parallax layers — Wonderland
+        "parallax.wonder.sky":       ParallaxArtWonder.sky,
+        "parallax.wonder.mountains": ParallaxArtWonder.mountains,
+        "parallax.wonder.hills":     ParallaxArtWonder.hills,
+        "parallax.wonder.ground":    ParallaxArtWonder.ground,
+
+        // Finale — Wonderland
+        "finale.wonder": FinaleArtWonder.wonder,
+
+        // Badges — Wonderland
+        "badge.wonder.volcano_circler": BadgeArtWonder.volcanoCircler,
+        "badge.wonder.rangers_friend":  BadgeArtWonder.rangersFriend,
+        "badge.wonder.weather_eye":     BadgeArtWonder.weatherEye,
+
+        // Landmarks — Superior Hiking Trail
+        "landmark.sht.jay_cooke":             LandmarkArtSHT.jayCooke,
+        "landmark.sht.enger_park":            LandmarkArtSHT.engerPark,
+        "landmark.sht.gooseberry_falls":      LandmarkArtSHT.gooseberryFalls,
+        "landmark.sht.split_rock_lighthouse": LandmarkArtSHT.splitRockLighthouse,
+        "landmark.sht.palisade_head":         LandmarkArtSHT.palisadeHead,
+        "landmark.sht.temperance_river":      LandmarkArtSHT.temperanceRiver,
+        "landmark.sht.carlton_peak":          LandmarkArtSHT.carltonPeak,
+        "landmark.sht.bean_bear_lakes":       LandmarkArtSHT.beanBearLakes,
+        "landmark.sht.caribou_falls":         LandmarkArtSHT.caribouFalls,
+        "landmark.sht.grand_portage":         LandmarkArtSHT.grandPortage,
+
+        // Parallax layers — Superior Hiking
+        "parallax.sht.sky":       ParallaxArtSHT.sky,
+        "parallax.sht.mountains": ParallaxArtSHT.mountains,
+        "parallax.sht.hills":     ParallaxArtSHT.hills,
+        "parallax.sht.ground":    ParallaxArtSHT.ground,
+
+        // Finale — Superior Hiking
+        "finale.sht": FinaleArtSHT.sht,
+
+        // Badges — Superior Hiking
+        "badge.sht.gitchi_gumi_walker":      BadgeArtSHT.gitchiGumiWalker,
+        "badge.sht.lighthouse_friend":       BadgeArtSHT.lighthouseFriend,
+        "badge.sht.moose_tracker":           BadgeArtSHT.mooseTracker,
+        "badge.sht.north_shore_chronicler":  BadgeArtSHT.northShoreChronicler,
+
         // Ambient encounters (wildlife, weather, fellow hikers)
         "ambient.cloud.small":      AmbientArt.cloudSmall,
         "ambient.cloud.large":      AmbientArt.cloudLarge,
@@ -1051,6 +1102,1336 @@ private enum FinaleArt {
         c.rect(x + 4, y - 1, w - 10, 1, p.parchment)
         // Shadow underside
         c.rect(x + 3, y + h - 1, w - 6, 1, p.cloudGray)
+    }
+}
+
+// MARK: - Wonderland Trail art (landmarks, parallax, finale, badges)
+
+private enum LandmarkArtWonder {
+    static func pine(_ c: PixelCanvas, x: Int, y: Int, size: Int = 3) {
+        let p = ArtPalette.self
+        c.rect(x, y - size, 1, size, p.treeDark)
+        c.rect(x - 1, y - size + 1, 3, 1, p.green)
+        if size >= 3 { c.rect(x - 1, y - 1, 3, 1, p.green) }
+    }
+
+    /// Draw Mt. Rainier silhouette — broad, symmetric, glaciated. Base x is
+    /// the left edge of the mountain; width is total; maxHeight is peak height.
+    static func rainier(_ c: PixelCanvas, baseX: Int, baseY: Int, width: Int, maxHeight: Int) {
+        let p = ArtPalette.self
+        var heights: [Int] = []
+        for i in 0..<width {
+            let t = Double(i) / Double(width - 1)
+            // Bell curve-ish: (1 - |2t - 1|^1.6)
+            let centered = abs(2 * t - 1)
+            let shape = 1.0 - pow(centered, 1.6)
+            heights.append(max(0, Int((shape * Double(maxHeight)).rounded())))
+        }
+        // Main silhouette
+        for (i, h) in heights.enumerated() where h > 0 {
+            c.col(baseX + i, from: baseY - h + 1, to: baseY, p.stoneDark)
+        }
+        // Sunlit east face (right half)
+        for (i, h) in heights.enumerated() where i > width / 2 && h > 4 {
+            let top = baseY - h + 1
+            c.col(baseX + i, from: top, to: top + h / 3, p.stone)
+        }
+        // Snow cap — top third of the dome
+        let snowThreshold = (maxHeight * 2) / 3
+        for (i, h) in heights.enumerated() where h >= snowThreshold {
+            c.px(baseX + i, baseY - h + 1, p.snow)
+            if h >= snowThreshold + 3 { c.px(baseX + i, baseY - h + 2, p.snow) }
+            if h >= snowThreshold + 6 { c.px(baseX + i, baseY - h + 3, p.snow) }
+        }
+    }
+
+    static let longmire = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        // Sky
+        c.rect(0, 0, 48, 30, p.sky)
+        // Distant conifer ridge
+        c.rect(0, 22, 48, 10, p.treeDark)
+        for x in stride(from: 0, to: 48, by: 3) {
+            c.rect(x, 20, 2, 4, p.green)
+        }
+        // Ground
+        c.rect(0, 38, 48, 10, p.grassDark)
+        c.rect(0, 36, 48, 2, p.grass)
+        // Log inn — main body
+        c.rect(14, 26, 22, 12, p.brown)
+        // Log-texture horizontal bands
+        for y in stride(from: 27, to: 38, by: 2) {
+            c.rect(14, y, 22, 1, p.deep)
+        }
+        // Pitched roof
+        let roof: [Int] = [0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,11,10,9,8,7,6,5,4,3,2,1,0]
+        for (i, h) in roof.enumerated() where h > 0 {
+            c.col(11 + i, from: 26 - h, to: 26 - 1, p.deep)
+        }
+        // Stone chimney
+        c.rect(30, 18, 3, 10, p.stone)
+        c.px(30, 18, p.stoneLight)
+        c.px(32, 18, p.stoneDark)
+        // Door
+        c.rect(23, 31, 3, 7, p.deep)
+        c.px(25, 34, p.sunrise) // doorknob
+        // Windows
+        c.rect(16, 29, 3, 3, p.sun)
+        c.rect(29, 29, 3, 3, p.sun)
+        // Foreground pines flanking
+        pine(c, x: 3, y: 38, size: 4)
+        pine(c, x: 6, y: 38, size: 3)
+        pine(c, x: 43, y: 38, size: 4)
+        pine(c, x: 46, y: 38, size: 3)
+    }
+
+    static let cougarRockBridge = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        // Sky
+        c.rect(0, 0, 48, 26, p.sky)
+        // Gorge walls
+        c.rect(0, 18, 12, 30, p.stoneDark)
+        c.rect(36, 18, 12, 30, p.stoneDark)
+        c.rect(0, 18, 12, 1, p.stoneLight)
+        c.rect(36, 18, 12, 1, p.stoneLight)
+        // Trees on tops
+        pine(c, x: 3, y: 18, size: 3)
+        pine(c, x: 7, y: 18, size: 4)
+        pine(c, x: 40, y: 18, size: 3)
+        pine(c, x: 44, y: 18, size: 4)
+        // Glacier meltwater below (pale turquoise)
+        c.rect(12, 38, 24, 10, p.waterLight)
+        c.rect(14, 42, 20, 1, p.water)
+        c.rect(16, 45, 16, 1, p.water)
+        // Suspension cables — sagging curve
+        let cableTopL = 20, cableTopR = 20
+        c.px(12, cableTopL, p.brown)
+        c.px(36, cableTopR, p.brown)
+        for x in 12...36 {
+            // parabolic sag
+            let t = Double(x - 12) / 24.0
+            let sag = Int((4.0 * (0.25 - (t - 0.5) * (t - 0.5))) * 8.0)
+            c.px(x, cableTopL + sag, p.deep)
+        }
+        // Deck — slightly arched
+        for x in 12...36 {
+            let t = Double(x - 12) / 24.0
+            let arch = Int(2.0 * (0.25 - (t - 0.5) * (t - 0.5)) * 6.0)
+            c.px(x, 30 - arch, p.brown)
+            c.px(x, 31 - arch, p.deep)
+        }
+        // Cable hangers (verticals)
+        for x in stride(from: 14, to: 36, by: 3) {
+            let t = Double(x - 12) / 24.0
+            let sag = Int((4.0 * (0.25 - (t - 0.5) * (t - 0.5))) * 8.0)
+            let arch = Int(2.0 * (0.25 - (t - 0.5) * (t - 0.5)) * 6.0)
+            c.col(x, from: cableTopL + sag, to: 30 - arch, p.brown)
+        }
+    }
+
+    static let emeraldRidge = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 48, p.sky)
+        // Back ridges
+        let back: [Int] = [
+            6,8,10,12,14,12,10,8,6,4,3,2,
+            4,6,8,10,12,14,12,10,8,6,4,2,
+            0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0
+        ]
+        c.silhouette(heights: back, baselineY: 32, color: p.mountDark)
+        // Mt. Rainier dominates center
+        rainier(c, baseX: 4, baseY: 36, width: 40, maxHeight: 30)
+        // Meadow foreground
+        c.rect(0, 40, 48, 8, p.grassDark)
+        c.rect(0, 38, 48, 2, p.grass)
+        // A few wildflowers
+        c.px(8, 44, p.coral)
+        c.px(14, 45, p.sunrise)
+        c.px(22, 43, p.coral)
+        c.px(30, 45, p.sunrise)
+        c.px(38, 44, p.coral)
+        // Tiny hiker silhouette
+        c.rect(22, 37, 1, 3, p.deep)
+        c.px(22, 36, p.coral)
+    }
+
+    static let klapatchePark = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 22, p.sky)
+        // Distant Rainier (upper half)
+        rainier(c, baseX: 10, baseY: 22, width: 28, maxHeight: 18)
+        // Tree line
+        c.rect(0, 22, 48, 2, p.treeDark)
+        pine(c, x: 4, y: 23, size: 3)
+        pine(c, x: 44, y: 23, size: 3)
+        // Aurora Lake — mirror
+        c.rect(0, 24, 48, 16, p.water)
+        // Reflection of Rainier (inverted, lighter)
+        let reflectHeights = (0..<28).map { i -> Int in
+            let t = Double(i) / 27.0
+            let centered = abs(2 * t - 1)
+            let shape = 1.0 - pow(centered, 1.6)
+            return max(0, Int((shape * 18.0).rounded()))
+        }
+        for (i, h) in reflectHeights.enumerated() where h > 0 {
+            c.col(10 + i, from: 24, to: min(24 + h, 39), p.mountBlue.opacity(0.6))
+        }
+        // Ripple lines
+        c.rect(2, 28, 12, 1, p.waterLight)
+        c.rect(30, 30, 14, 1, p.waterLight)
+        c.rect(8, 34, 30, 1, p.waterLight)
+        // Shore grass
+        c.rect(0, 40, 48, 8, p.grassDark)
+        c.rect(0, 39, 48, 1, p.grass)
+    }
+
+    static let sprayPark = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 18, p.sky)
+        // Peek of Rainier
+        rainier(c, baseX: 15, baseY: 20, width: 18, maxHeight: 14)
+        // Tree fringe
+        for x in stride(from: 0, to: 48, by: 5) {
+            pine(c, x: x, y: 22, size: 3)
+        }
+        // Meadow
+        c.rect(0, 22, 48, 26, p.grass)
+        for y in stride(from: 24, to: 48, by: 2) {
+            for x in stride(from: y % 4, to: 48, by: 4) {
+                c.px(x, y, p.grassDark)
+            }
+        }
+        // Wildflowers — dense, varied
+        let flowers: [(Int, Int, Int)] = [
+            (4,26,0),(10,28,1),(18,27,0),(24,29,2),(32,26,1),(38,28,0),(44,27,2),
+            (6,32,1),(14,34,2),(22,33,0),(28,35,1),(36,32,0),(42,34,2),
+            (2,38,0),(10,40,1),(16,39,2),(26,41,0),(32,38,1),(40,40,2),
+            (8,44,1),(18,45,0),(28,44,2),(38,46,1)
+        ]
+        for (x, y, kind) in flowers {
+            let color = [p.coral, p.sunrise, p.parchment][kind]
+            c.px(x, y, color)
+            c.px(x, y - 1, p.treeDark)
+        }
+        // Marmot on a rock
+        c.rect(2, 41, 5, 3, p.stoneDark)
+        c.rect(3, 38, 3, 3, p.brown) // marmot body
+        c.rect(5, 37, 1, 2, p.brown) // head
+        c.px(5, 37, p.deep)
+    }
+
+    static let mysticLake = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 10, p.sky)
+        // Willis Wall — dark massive cliff
+        c.rect(0, 4, 48, 26, p.stoneDark)
+        // Snow bands on wall
+        for y in [6, 10, 14, 18] {
+            for x in stride(from: 2, to: 46, by: 6) {
+                c.rect(x, y, 3, 1, p.snow)
+            }
+        }
+        // Striations
+        for x in stride(from: 0, to: 48, by: 4) {
+            c.col(x, from: 8, to: 28, p.stoneDark.opacity(0.7))
+        }
+        // Wall's jagged top edge
+        let top: [Int] = [
+            4,5,6,7,8,6,5,7,9,10,11,9,
+            7,8,10,12,13,11,9,7,8,10,11,13,
+            14,12,10,8,7,9,11,10,
+            8,6,7,9,10,8,6,5,6,7,8,6,5,4,3,2
+        ]
+        for (x, h) in top.enumerated() where h > 0 {
+            c.col(x, from: 4 - h + 4, to: 4, p.sky)
+        }
+        // Shore
+        c.rect(0, 30, 48, 4, p.stone)
+        // Alpine tarn
+        c.rect(0, 34, 48, 14, p.water)
+        c.rect(0, 34, 48, 1, p.mountDark)
+        // Ripples
+        c.rect(4, 38, 10, 1, p.waterLight)
+        c.rect(22, 40, 16, 1, p.waterLight)
+        c.rect(10, 44, 28, 1, p.waterLight)
+    }
+
+    static let summerland = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 16, p.sky)
+        // Rainier east face (asymmetric — steeper east)
+        var heights: [Int] = []
+        for i in 0..<40 {
+            let t = Double(i) / 39.0
+            // Steeper on the right (east face)
+            let centered = abs(2 * t - 1)
+            let shape = 1.0 - pow(centered, 1.8)
+            // Bias the peak slightly left
+            heights.append(max(0, Int((shape * 28.0).rounded())))
+        }
+        for (i, h) in heights.enumerated() where h > 0 {
+            c.col(4 + i, from: 32 - h + 1, to: 32, p.stoneDark)
+        }
+        // Snow on upper slopes
+        for (i, h) in heights.enumerated() where h >= 20 {
+            c.px(4 + i, 32 - h + 1, p.snow)
+            if h >= 24 { c.px(4 + i, 32 - h + 2, p.snow) }
+        }
+        // Subalpine bowl — purple heather
+        c.rect(0, 32, 48, 16, p.grassDark)
+        for y in stride(from: 34, to: 48, by: 2) {
+            for x in stride(from: y % 3, to: 48, by: 3) {
+                c.px(x, y, p.mountBlue.opacity(0.5))
+            }
+        }
+        // Scattered alpine firs
+        pine(c, x: 6, y: 34, size: 3)
+        pine(c, x: 12, y: 34, size: 4)
+        pine(c, x: 36, y: 34, size: 3)
+        pine(c, x: 42, y: 34, size: 4)
+    }
+
+    static let panhandleGap = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 48, p.sky)
+        // Distant back ridges
+        let back: [Int] = [
+            4,6,8,10,8,6,4,2,3,5,7,9,
+            11,9,7,5,3,4,6,8,10,8,6,4,
+            2,3,5,7,6,4,2,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0
+        ]
+        c.silhouette(heights: back, baselineY: 30, color: p.mountDark)
+        // Snow on back peaks
+        for (x, h) in back.enumerated() where h >= 8 {
+            c.px(x, 30 - h + 1, p.snow)
+        }
+        // Stark rocky ground
+        c.rect(0, 30, 48, 18, p.stone)
+        c.rect(0, 30, 48, 1, p.stoneLight)
+        // Scree specks
+        for (x, y) in [(3,36),(8,40),(14,42),(20,38),(28,43),(34,37),(40,41),(45,39)] {
+            c.px(x, y, p.stoneDark)
+        }
+        // Large stone cairn
+        c.rect(22, 36, 6, 2, p.stoneDark)
+        c.rect(23, 34, 4, 2, p.stone)
+        c.rect(24, 32, 2, 2, p.stoneDark)
+        c.px(24, 30, p.stone)
+        c.px(25, 30, p.stone)
+        // Wind wisp
+        c.rect(32, 10, 8, 1, p.parchment.opacity(0.4))
+        c.rect(6, 16, 9, 1, p.parchment.opacity(0.4))
+    }
+}
+
+private enum ParallaxArtWonder {
+    static let sky = PixelSprite(width: 8, height: 8) { c in
+        c.rect(0, 0, 8, 8, ArtPalette.sky)
+        // Cooler PNW tint — gray wash at top
+        c.rect(0, 0, 8, 3, ArtPalette.cloudGray.opacity(0.25))
+    }
+
+    static let mountains = PixelSprite(width: 256, height: 96) { c in
+        let p = ArtPalette.self
+        // Sky wash
+        c.rect(0, 0, 256, 96, p.sky)
+        // PNW gray mist band
+        c.rect(0, 0, 256, 30, p.cloudGray.opacity(0.2))
+        c.rect(0, 74, 256, 14, p.mountLight.opacity(0.35))
+
+        // Background ridge — low, rolling, dark green-blue
+        var back: [Int] = []
+        let backControl: [Int] = [32, 38, 30, 36, 42, 28, 34, 40, 32, 28, 34, 38, 30, 32]
+        var adjusted = backControl
+        adjusted[adjusted.count - 1] = adjusted[0]
+        let span = 256 / (adjusted.count - 1)
+        for seg in 0..<(adjusted.count - 1) {
+            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            for i in 0..<span {
+                let t = Double(i) / Double(span)
+                back.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+            }
+        }
+        while back.count < 256 { back.append(back.last ?? 0) }
+        c.silhouette(heights: back, baselineY: 95, color: p.mountDark)
+
+        // Mt. Rainier — the dominant dome, centered
+        let rainierCenter = 128
+        let rainierHalfWidth = 90
+        let rainierMax = 72
+        for i in -rainierHalfWidth...rainierHalfWidth {
+            let t = Double(abs(i)) / Double(rainierHalfWidth)
+            let shape = 1.0 - pow(t, 1.7)
+            let h = max(0, Int((shape * Double(rainierMax)).rounded()))
+            let x = rainierCenter + i
+            guard x >= 0, x < 256, h > 0 else { continue }
+            c.col(x, from: 95 - h + 1, to: 95, p.stoneDark)
+        }
+        // East face sunlit highlight
+        for i in 1...rainierHalfWidth {
+            let t = Double(i) / Double(rainierHalfWidth)
+            let shape = 1.0 - pow(t, 1.7)
+            let h = max(0, Int((shape * Double(rainierMax)).rounded()))
+            let x = rainierCenter + i
+            guard x >= 0, x < 256, h > 4 else { continue }
+            let top = 95 - h + 1
+            c.col(x, from: top, to: top + h / 4, p.stone)
+        }
+        // West face shadow
+        for i in 1...rainierHalfWidth {
+            let t = Double(i) / Double(rainierHalfWidth)
+            let shape = 1.0 - pow(t, 1.7)
+            let h = max(0, Int((shape * Double(rainierMax)).rounded()))
+            let x = rainierCenter - i
+            guard x >= 0, x < 256, h > 4 else { continue }
+            c.col(x, from: 95 - h + 1, to: 95 - h + 1 + h / 5, p.mountDark)
+        }
+        // Heavy snow across upper third of Rainier
+        for i in -rainierHalfWidth...rainierHalfWidth {
+            let t = Double(abs(i)) / Double(rainierHalfWidth)
+            let shape = 1.0 - pow(t, 1.7)
+            let h = max(0, Int((shape * Double(rainierMax)).rounded()))
+            guard h >= 44 else { continue }
+            let x = rainierCenter + i
+            guard x >= 0, x < 256 else { continue }
+            c.px(x, 95 - h + 1, p.snow)
+            if h >= 50 { c.px(x, 95 - h + 2, p.snow) }
+            if h >= 56 { c.px(x, 95 - h + 3, p.snow) }
+            if h >= 62 { c.px(x, 95 - h + 4, p.snow) }
+            if h >= 68 { c.px(x, 95 - h + 5, p.snow) }
+        }
+    }
+
+    static let hills = PixelSprite(width: 256, height: 64) { c in
+        let p = ArtPalette.self
+        var heights: [Int] = []
+        let control: [Int] = [20, 26, 32, 28, 36, 24, 30, 34, 28, 24, 28, 30, 22, 20]
+        var adjusted = control
+        adjusted[adjusted.count - 1] = adjusted[0]
+        let span = 256 / (adjusted.count - 1)
+        for seg in 0..<(adjusted.count - 1) {
+            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            for i in 0..<span {
+                let t = Double(i) / Double(span)
+                heights.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+            }
+        }
+        while heights.count < 256 { heights.append(heights.last ?? 0) }
+        c.silhouette(heights: heights, baselineY: 63, color: p.hillDark)
+        // Crown shading
+        for x in 0..<256 {
+            let h = heights[x]
+            if h > 0 {
+                let top = 63 - h + 1
+                c.col(x, from: top, to: top + max(1, h / 4), p.hillLight)
+            }
+        }
+        // Tall Douglas-fir silhouettes (narrower, taller than JMT pines)
+        for x in stride(from: 5, to: 256, by: 7) {
+            let h = heights[x]
+            if h > 3 {
+                let baseY = 63 - h
+                c.rect(x, baseY - 5, 1, 5, p.treeDark)
+                c.rect(x - 1, baseY - 4, 3, 1, p.green)
+                c.rect(x - 1, baseY - 2, 3, 1, p.green)
+                c.px(x, baseY - 5, p.treeDark)
+            }
+        }
+    }
+
+    static let ground = PixelSprite(width: 32, height: 16) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 32, 16, p.grassDark)
+        c.rect(0, 0, 32, 2, p.grass)
+        c.rect(0, 2, 32, 1, p.hillLight)
+        // Wildflower specks
+        c.px(5, 7, p.coral)
+        c.px(11, 10, p.sunrise)
+        c.px(17, 6, p.parchment)
+        c.px(23, 11, p.coral)
+        c.px(28, 8, p.sunrise)
+        c.px(3, 13, p.coral)
+        c.px(19, 14, p.parchment)
+    }
+}
+
+private enum FinaleArtWonder {
+    static let wonder = PixelSprite(width: 512, height: 320) { c in
+        let p = ArtPalette.self
+        // Dawn sky — bands from deep purple up top down to warm sky
+        c.rect(0, 0, 512, 40, p.mountDark)
+        c.rect(0, 40, 512, 30, p.sunrise)
+        c.rect(0, 70, 512, 40, p.sun)
+        c.rect(0, 110, 512, 90, p.sky)
+        // Sun disc — rising low
+        let sunX = 120, sunY = 95
+        c.rect(sunX - 16, sunY - 16, 32, 32, p.sun)
+        c.rect(sunX - 12, sunY - 12, 24, 24, p.parchment)
+        c.rect(sunX - 8, sunY - 8, 16, 16, p.sun)
+        // Rays
+        c.rect(sunX - 24, sunY - 2, 48, 4, p.sun.opacity(0.4))
+        c.rect(sunX - 2, sunY - 24, 4, 48, p.sun.opacity(0.4))
+        // Distant ridges
+        var farH: [Int] = []
+        for x in 0..<512 {
+            let a = Double(x) * 0.03
+            farH.append(30 + Int(14 * sin(a) + 8 * sin(a * 2.1)))
+        }
+        c.silhouette(heights: farH, baselineY: 200, color: p.mountDark)
+        // Mid ridges
+        var midH: [Int] = []
+        for x in 0..<512 {
+            let a = Double(x) * 0.022
+            midH.append(50 + Int(20 * sin(a * 0.9) + 12 * sin(a * 2.4)))
+        }
+        c.silhouette(heights: midH, baselineY: 230, color: p.mountBlue)
+        // Mt. Rainier — hero dome, center
+        let cx = 280
+        let halfW = 160
+        let maxH = 220
+        for i in -halfW...halfW {
+            let t = Double(abs(i)) / Double(halfW)
+            let shape = 1.0 - pow(t, 1.6)
+            let h = max(0, Int((shape * Double(maxH)).rounded()))
+            let x = cx + i
+            if x < 0 || x >= 512 || h == 0 { continue }
+            c.col(x, from: 260 - h + 1, to: 260, p.stoneDark)
+            // East face sunlit
+            if i > 0 && h > 20 {
+                let top = 260 - h + 1
+                c.col(x, from: top, to: top + h / 4, p.sunrise.opacity(0.6))
+            }
+        }
+        // Snow cap — upper half
+        for i in -halfW...halfW {
+            let t = Double(abs(i)) / Double(halfW)
+            let shape = 1.0 - pow(t, 1.6)
+            let h = max(0, Int((shape * Double(maxH)).rounded()))
+            guard h >= 120 else { continue }
+            let x = cx + i
+            if x < 0 || x >= 512 { continue }
+            for d in 0..<min(h - 100, 30) {
+                c.px(x, 260 - h + 1 + d, p.snow)
+            }
+        }
+        // Foreground meadow
+        c.rect(0, 260, 512, 60, p.grassDark)
+        c.rect(0, 258, 512, 3, p.grass)
+        // Wildflowers dense across meadow
+        for x in stride(from: 6, to: 512, by: 9) {
+            let yJitter = (x * 7) % 5
+            let y = 272 + yJitter
+            let color = [p.coral, p.sunrise, p.parchment][x % 3]
+            c.rect(x, y, 1, 2, color)
+            c.px(x, y + 2, p.treeDark)
+        }
+        // Hiker on meadow, arms raised
+        let hx = 260, hy = 252
+        c.rect(hx - 2, hy, 4, 1, p.deep) // hat crown
+        c.rect(hx - 3, hy + 1, 6, 1, p.deep) // brim
+        c.rect(hx - 1, hy + 2, 3, 2, p.skin)
+        c.rect(hx - 2, hy + 4, 5, 6, p.coral)
+        c.rect(hx - 4, hy + 1, 1, 5, p.coral) // left arm raised
+        c.rect(hx + 3, hy + 1, 1, 5, p.coral)
+        c.px(hx - 4, hy, p.skin)
+        c.px(hx + 3, hy, p.skin)
+        c.rect(hx - 2, hy + 10, 2, 4, p.mountBlue)
+        c.rect(hx + 1, hy + 10, 2, 4, p.mountBlue)
+        c.rect(hx - 2, hy + 14, 2, 1, p.deep)
+        c.rect(hx + 1, hy + 14, 2, 1, p.deep)
+        // Drifting PNW clouds
+        for (cxp, cyp, cw) in [(60, 30, 60), (380, 22, 50), (430, 50, 40), (160, 46, 35)] {
+            c.rect(cxp, cyp, cw, 6, p.parchment)
+            c.rect(cxp + 2, cyp - 1, cw - 4, 1, p.parchment)
+            c.rect(cxp + 3, cyp + 6, cw - 6, 1, p.cloudGray)
+        }
+    }
+}
+
+private enum BadgeArtWonder {
+    static func plate(_ c: PixelCanvas, tint: Color, interior: (PixelCanvas) -> Void) {
+        let p = ArtPalette.self
+        c.rect(4, 4, 24, 24, tint)
+        c.rect(6, 2, 20, 2, tint)
+        c.rect(6, 28, 20, 2, tint)
+        c.rect(2, 6, 2, 20, tint)
+        c.rect(28, 6, 2, 20, tint)
+        c.rect(6, 6, 20, 20, p.parchment)
+        c.rect(6, 6, 20, 1, p.sand)
+        c.rect(6, 25, 20, 1, p.sand)
+        c.rect(6, 6, 1, 20, p.sand)
+        c.rect(25, 6, 1, 20, p.sand)
+        interior(c)
+    }
+
+    static let volcanoCircler = PixelSprite(width: 32, height: 32) { c in
+        plate(c, tint: ArtPalette.sunrise) { c in
+            let p = ArtPalette.self
+            // Snow-capped cone
+            let cone: [Int] = [0,0,0,2,4,6,8,10,11,12,12,11,10,8,6,4,2,0,0,0]
+            for (i, h) in cone.enumerated() where h > 0 {
+                c.col(6 + i, from: 22 - h + 1, to: 22, p.stoneDark)
+            }
+            // Snow on top
+            c.rect(11, 10, 8, 2, p.snow)
+            c.rect(13, 9, 4, 1, p.snow)
+            // Compass arrow circling (curved arrow)
+            c.px(10, 14, p.mountBlue)
+            c.px(8, 16, p.mountBlue)
+            c.px(7, 18, p.mountBlue)
+            c.px(8, 20, p.mountBlue)
+            c.px(10, 21, p.mountBlue)
+            c.px(13, 22, p.mountBlue)
+            c.px(17, 22, p.mountBlue)
+            c.px(20, 21, p.mountBlue)
+            c.px(22, 20, p.mountBlue)
+            // Arrowhead
+            c.px(22, 18, p.coral)
+            c.px(23, 19, p.coral)
+            c.px(24, 20, p.coral)
+            c.px(22, 22, p.coral)
+        }
+    }
+
+    static let rangersFriend = PixelSprite(width: 32, height: 32) { c in
+        plate(c, tint: ArtPalette.green) { c in
+            let p = ArtPalette.self
+            // Campaign-style ranger hat — wide brim
+            // Brim
+            c.rect(7, 18, 18, 2, p.brown)
+            c.rect(9, 17, 14, 1, p.deep)
+            // Crown
+            c.rect(11, 12, 10, 6, p.brown)
+            c.rect(12, 10, 8, 2, p.brown)
+            c.rect(13, 9, 6, 1, p.brown)
+            // Dimples
+            c.px(12, 12, p.deep)
+            c.px(19, 12, p.deep)
+            c.rect(15, 10, 2, 1, p.deep)
+            // Hat band
+            c.rect(11, 16, 10, 1, p.deep)
+            // Ranger insignia — shield
+            c.rect(15, 20, 2, 3, p.sunrise)
+            c.px(14, 21, p.sunrise)
+            c.px(17, 21, p.sunrise)
+        }
+    }
+
+    static let weatherEye = PixelSprite(width: 32, height: 32) { c in
+        plate(c, tint: ArtPalette.mountBlue) { c in
+            let p = ArtPalette.self
+            // Cloud
+            c.rect(8, 10, 16, 5, p.cloudGray)
+            c.rect(10, 8, 12, 2, p.cloudGray)
+            c.rect(12, 6, 8, 2, p.parchment)
+            c.rect(6, 12, 2, 3, p.cloudGray)
+            c.rect(24, 12, 2, 3, p.cloudGray)
+            // Cloud underside
+            c.rect(8, 14, 16, 1, p.stoneDark)
+            // Eye inside cloud
+            c.rect(12, 17, 8, 4, p.parchment)
+            c.rect(12, 17, 8, 1, p.deep)
+            c.rect(12, 20, 8, 1, p.deep)
+            c.rect(11, 18, 1, 2, p.deep)
+            c.rect(20, 18, 1, 2, p.deep)
+            // Iris
+            c.rect(14, 18, 4, 2, p.mountBlue)
+            // Pupil
+            c.rect(15, 18, 2, 2, p.deep)
+            // Highlight
+            c.px(15, 18, p.parchment)
+            // Rain drops below
+            c.rect(12, 23, 1, 2, p.waterLight)
+            c.rect(16, 23, 1, 2, p.waterLight)
+            c.rect(20, 23, 1, 2, p.waterLight)
+        }
+    }
+}
+
+// MARK: - Superior Hiking Trail art (landmarks, parallax, finale, badges)
+
+private enum LandmarkArtSHT {
+    static func pine(_ c: PixelCanvas, x: Int, y: Int, size: Int = 3) {
+        let p = ArtPalette.self
+        c.rect(x, y - size, 1, size, p.treeDark)
+        c.rect(x - 1, y - size + 1, 3, 1, p.green)
+        if size >= 3 { c.rect(x - 1, y - 1, 3, 1, p.green) }
+    }
+
+    static func birch(_ c: PixelCanvas, x: Int, y: Int, size: Int = 4) {
+        let p = ArtPalette.self
+        // White trunk
+        c.rect(x, y - size, 1, size, p.parchment)
+        // Bark marks
+        c.px(x, y - size + 1, p.deep)
+        c.px(x, y - size + 3, p.deep)
+        // Yellow-green leaves
+        c.rect(x - 1, y - size, 3, 1, p.hillLight)
+        c.rect(x - 2, y - size + 1, 5, 1, p.green)
+    }
+
+    static let jayCooke = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 22, p.sky)
+        // Trees on far bank
+        for x in stride(from: 0, to: 48, by: 3) {
+            c.rect(x, 16, 2, 6, p.treeDark)
+        }
+        // Red slate cliffs (signature Jay Cooke color — use coral-ish)
+        c.rect(0, 22, 18, 8, p.coral.opacity(0.7))
+        c.rect(30, 22, 18, 8, p.coral.opacity(0.7))
+        c.rect(0, 22, 18, 1, p.sunrise)
+        c.rect(30, 22, 18, 1, p.sunrise)
+        // Turbulent river below
+        c.rect(0, 30, 48, 18, p.water)
+        // White water / foam
+        for (x, y) in [(2,34),(8,36),(14,38),(22,34),(28,37),(36,35),(42,39),(6,42),(18,44),(30,43),(40,45)] {
+            c.rect(x, y, 3, 1, p.parchment)
+        }
+        // Swinging bridge — cables
+        c.rect(18, 20, 12, 1, p.brown)
+        // Cables sagging
+        for x in 18...30 {
+            let t = Double(x - 18) / 12.0
+            let sag = Int((4.0 * (0.25 - (t - 0.5) * (t - 0.5))) * 6.0)
+            c.px(x, 20 + sag, p.deep)
+        }
+        // Deck
+        for x in 18...30 {
+            let t = Double(x - 18) / 12.0
+            let arch = Int(1.5 * (0.25 - (t - 0.5) * (t - 0.5)) * 4.0)
+            c.px(x, 28 - arch, p.brown)
+            c.px(x, 29 - arch, p.deep)
+        }
+    }
+
+    static let engerPark = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 24, p.sky)
+        // Lake Superior horizon (dominant)
+        c.rect(0, 18, 48, 2, p.waterLight)
+        // Distant lake haze
+        c.rect(0, 17, 48, 1, p.mountLight.opacity(0.5))
+        // Hill ridgeline where Enger sits
+        c.rect(0, 24, 48, 4, p.hillDark)
+        c.rect(0, 23, 48, 1, p.hillLight)
+        // Duluth harbor / city — cluster of rooflines
+        c.rect(2, 28, 44, 10, p.stoneDark)
+        // Windows
+        for x in stride(from: 3, to: 46, by: 3) {
+            c.px(x, 31, p.sun)
+            c.px(x, 34, p.sun)
+        }
+        // Aerial Lift Bridge — two towers with lift span
+        c.rect(18, 22, 2, 8, p.deep)
+        c.rect(28, 22, 2, 8, p.deep)
+        c.rect(18, 26, 12, 1, p.deep)
+        c.rect(18, 22, 12, 1, p.deep) // top span
+        // Water below bridge
+        c.rect(0, 30, 48, 18, p.water)
+        c.rect(0, 38, 48, 1, p.waterLight)
+        c.rect(0, 44, 48, 1, p.waterLight)
+        // A laker steaming through
+        c.rect(32, 34, 10, 2, p.stoneDark)
+        c.rect(34, 32, 2, 2, p.parchment) // pilothouse
+        c.px(40, 32, p.stoneDark)
+        c.rect(32, 36, 10, 1, p.deep)
+    }
+
+    static let gooseberryFalls = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 16, p.sky)
+        // Tree line
+        for x in stride(from: 0, to: 48, by: 3) {
+            c.rect(x, 12, 2, 4, p.treeDark)
+        }
+        // Basalt cliffs — three tiers
+        c.rect(0, 16, 48, 6, p.stoneDark)
+        c.rect(0, 24, 48, 6, p.stoneDark)
+        c.rect(0, 32, 48, 6, p.stoneDark)
+        // Tier highlights
+        c.rect(0, 16, 48, 1, p.stone)
+        c.rect(0, 24, 48, 1, p.stone)
+        c.rect(0, 32, 48, 1, p.stone)
+        // Waterfall — tea-colored cascade down left-center
+        c.rect(16, 16, 14, 6, p.waterLight)
+        c.rect(16, 22, 14, 2, p.water)
+        c.rect(16, 24, 14, 6, p.waterLight)
+        c.rect(16, 30, 14, 2, p.water)
+        c.rect(16, 32, 14, 6, p.waterLight)
+        // Foam highlights
+        for x in stride(from: 17, to: 30, by: 2) {
+            c.px(x, 19, p.parchment)
+            c.px(x + 1, 27, p.parchment)
+            c.px(x, 35, p.parchment)
+        }
+        // Pool at base
+        c.rect(0, 38, 48, 10, p.water)
+        c.rect(14, 38, 18, 2, p.parchment.opacity(0.6))
+        c.rect(0, 40, 48, 1, p.waterLight)
+    }
+
+    static let splitRockLighthouse = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 22, p.sky)
+        // Lake Superior on the right, horizon
+        c.rect(20, 18, 28, 1, p.mountLight)
+        // Cliff edge (left) — dark basalt
+        c.rect(0, 22, 24, 26, p.stoneDark)
+        c.rect(0, 22, 24, 1, p.stone)
+        // Lake water
+        c.rect(20, 22, 28, 26, p.water)
+        c.rect(20, 30, 28, 1, p.waterLight)
+        c.rect(20, 38, 28, 1, p.waterLight)
+        // Lighthouse on cliff — tall white octagonal tower
+        let lx = 10
+        // Base
+        c.rect(lx - 2, 22, 6, 2, p.stone)
+        // Tower
+        c.rect(lx - 1, 12, 4, 10, p.parchment)
+        c.rect(lx, 11, 2, 1, p.parchment)
+        // Tower shadow stripe
+        c.rect(lx + 1, 12, 1, 10, p.cloudGray)
+        // Lamp room
+        c.rect(lx - 2, 8, 6, 3, p.deep)
+        c.rect(lx - 1, 6, 4, 2, p.sun) // light lens
+        // Red dome
+        c.rect(lx - 2, 4, 6, 2, p.coral)
+        c.rect(lx - 1, 3, 4, 1, p.coral)
+        c.px(lx, 2, p.deep) // finial
+        // Keeper's house
+        c.rect(14, 18, 8, 4, p.parchment)
+        c.rect(13, 17, 10, 1, p.coral) // red roof
+        c.rect(14, 17, 8, 1, p.coral)
+        // Beam of light
+        c.rect(lx + 4, 7, 12, 1, p.sun.opacity(0.3))
+        c.rect(lx + 4, 8, 12, 1, p.sun.opacity(0.2))
+        // Trees far side
+        pine(c, x: 38, y: 22, size: 2)
+        pine(c, x: 42, y: 22, size: 2)
+    }
+
+    static let palisadeHead = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 12, p.sky)
+        // Sheer basalt cliff — nearly full height, left side
+        c.rect(0, 4, 30, 44, p.stoneDark)
+        // Cliff face texture — vertical cracks
+        for x in [4, 9, 14, 19, 24] {
+            c.col(x, from: 6, to: 44, p.deep)
+        }
+        // Cliff top edge
+        c.rect(0, 3, 30, 1, p.stone)
+        // Trees on cliff top
+        pine(c, x: 4, y: 4, size: 3)
+        pine(c, x: 10, y: 4, size: 4)
+        pine(c, x: 16, y: 4, size: 3)
+        pine(c, x: 24, y: 4, size: 4)
+        // Lake Superior — deep blue, right side
+        c.rect(30, 12, 18, 36, p.water)
+        // Lake texture
+        c.rect(30, 16, 18, 1, p.waterLight)
+        c.rect(30, 24, 18, 1, p.waterLight)
+        c.rect(30, 34, 18, 1, p.waterLight)
+        // Horizon haze
+        c.rect(30, 12, 18, 1, p.mountLight.opacity(0.6))
+        // Cliff shadow in water
+        c.rect(30, 12, 10, 36, p.mountDark.opacity(0.3))
+    }
+
+    static let temperanceRiver = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 12, p.sky)
+        // Trees on top edges
+        pine(c, x: 3, y: 12, size: 3)
+        pine(c, x: 8, y: 12, size: 4)
+        pine(c, x: 39, y: 12, size: 4)
+        pine(c, x: 44, y: 12, size: 3)
+        // Black basalt walls — narrow canyon
+        c.rect(0, 12, 16, 36, p.stoneDark)
+        c.rect(32, 12, 16, 36, p.stoneDark)
+        c.rect(0, 12, 16, 1, p.stone)
+        c.rect(32, 12, 16, 1, p.stone)
+        // Wall cracks
+        for y in stride(from: 16, to: 46, by: 5) {
+            c.px(6, y, p.deep)
+            c.px(12, y, p.deep)
+            c.px(36, y, p.deep)
+            c.px(42, y, p.deep)
+        }
+        // Narrow river / slot — white water
+        c.rect(16, 12, 16, 36, p.water)
+        // Turbulent white water
+        for y in stride(from: 14, to: 48, by: 3) {
+            c.rect(18, y, 12, 1, p.parchment)
+            c.rect(16 + (y % 6), y + 1, 3, 1, p.waterLight)
+        }
+        // Pothole (large scooped rock in river)
+        c.rect(20, 34, 8, 4, p.stoneDark)
+        c.rect(22, 36, 4, 1, p.water)
+    }
+
+    static let carltonPeak = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 30, p.sky)
+        // Lake Superior stripe on horizon
+        c.rect(0, 26, 48, 2, p.mountLight.opacity(0.5))
+        c.rect(0, 27, 48, 1, p.water.opacity(0.7))
+        // Forest ridge (far)
+        c.rect(0, 28, 48, 4, p.hillDark)
+        // Anorthosite summit — tumble of boulders
+        // Main peak mass
+        let peak: [Int] = [
+            0,0,0,0,2,4,7,10,13,15,17,18,
+            19,20,20,19,18,17,15,12,10,8,
+            6,4,2,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0
+        ]
+        c.silhouette(heights: peak, baselineY: 40, color: p.stone)
+        // Boulder texture
+        for (x, y) in [(10,30),(14,26),(18,24),(22,25),(16,32),(12,34),(20,33),(14,29)] {
+            c.rect(x, y, 3, 2, p.stoneDark)
+            c.px(x, y, p.stoneLight)
+        }
+        // Foreground ground
+        c.rect(0, 40, 48, 8, p.grassDark)
+        c.rect(0, 38, 48, 2, p.hillDark)
+        // Scrubby trees
+        pine(c, x: 2, y: 40, size: 3)
+        pine(c, x: 6, y: 40, size: 2)
+        pine(c, x: 40, y: 40, size: 3)
+        pine(c, x: 44, y: 40, size: 4)
+    }
+
+    static let beanBearLakes = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 14, p.sky)
+        // Distant ridges
+        let far: [Int] = [
+            3,5,7,9,8,6,4,3,5,7,9,8,
+            6,4,2,3,5,7,8,10,12,10,8,6,
+            4,3,5,7,9,8,6,4,2,3,5,7,
+            9,10,8,6,4,3,2,1,0,0,0,0
+        ]
+        c.silhouette(heights: far, baselineY: 16, color: p.hillDark)
+        // Green ridges nearer
+        c.rect(0, 16, 48, 3, p.green)
+        for x in stride(from: 0, to: 48, by: 2) {
+            c.rect(x, 14, 1, 3, p.treeDark)
+        }
+        // Bean Lake — larger, upper left
+        c.rect(8, 22, 16, 8, p.water)
+        c.rect(8, 22, 16, 1, p.mountDark)
+        c.rect(10, 26, 6, 1, p.waterLight)
+        c.rect(18, 28, 4, 1, p.waterLight)
+        // Bear Lake — lower right, smaller
+        c.rect(26, 32, 14, 7, p.water)
+        c.rect(26, 32, 14, 1, p.mountDark)
+        c.rect(28, 35, 6, 1, p.waterLight)
+        // Surrounding forested ridges
+        c.rect(0, 30, 48, 18, p.hillDark)
+        // Shores of lakes (cut the forest)
+        c.rect(8, 30, 16, 2, p.green)
+        c.rect(26, 39, 14, 2, p.green)
+        // A loon on Bean Lake (tiny)
+        c.rect(14, 25, 3, 1, p.deep)
+        c.px(17, 24, p.deep)
+        c.px(14, 24, p.deep)
+        // Scattered trees
+        pine(c, x: 4, y: 46, size: 4)
+        pine(c, x: 44, y: 46, size: 4)
+    }
+
+    static let caribouFalls = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 14, p.sky)
+        // Forested cliff edge
+        for x in stride(from: 0, to: 24, by: 3) {
+            c.rect(x, 10, 2, 4, p.treeDark)
+        }
+        // Basalt cliff on left
+        c.rect(0, 14, 24, 20, p.stoneDark)
+        c.rect(0, 14, 24, 1, p.stone)
+        // Cracks
+        c.col(6, from: 16, to: 32, p.deep)
+        c.col(14, from: 16, to: 32, p.deep)
+        c.col(20, from: 16, to: 32, p.deep)
+        // Waterfall from cliff
+        c.rect(12, 14, 8, 20, p.waterLight)
+        c.rect(14, 16, 4, 18, p.parchment)
+        c.rect(12, 18, 8, 2, p.water)
+        c.rect(12, 26, 8, 2, p.water)
+        // Lake Superior — blends right side, entire
+        c.rect(24, 14, 24, 34, p.water)
+        c.rect(24, 14, 24, 1, p.mountLight.opacity(0.7))
+        c.rect(24, 20, 24, 1, p.waterLight)
+        c.rect(24, 30, 24, 1, p.waterLight)
+        c.rect(24, 40, 24, 1, p.waterLight)
+        // Where falls meet lake — foam
+        c.rect(10, 32, 14, 4, p.parchment.opacity(0.8))
+        c.rect(12, 36, 12, 1, p.parchment.opacity(0.6))
+        // Merganser and ducklings — tiny
+        c.rect(32, 36, 2, 1, p.deep)
+        c.px(33, 35, p.coral)
+        c.px(36, 36, p.deep)
+        c.px(38, 36, p.deep)
+        c.px(40, 36, p.deep)
+        // Shore rocks
+        c.rect(22, 44, 26, 4, p.stoneDark)
+    }
+
+    static let grandPortage = PixelSprite(width: 48, height: 48) { c in
+        let p = ArtPalette.self
+        c.rect(0, 0, 48, 18, p.sky)
+        // Lake Superior — vast, with Canada barely visible on far shore
+        c.rect(0, 14, 48, 2, p.mountLight.opacity(0.6))
+        c.rect(0, 16, 48, 2, p.hillDark.opacity(0.5)) // Canada silhouette
+        // Lake
+        c.rect(0, 18, 48, 18, p.water)
+        c.rect(0, 22, 48, 1, p.waterLight)
+        c.rect(0, 28, 48, 1, p.waterLight)
+        c.rect(0, 34, 48, 1, p.waterLight)
+        // Shore / rocky beach
+        c.rect(0, 36, 48, 12, p.stoneDark)
+        c.rect(0, 36, 48, 1, p.stone)
+        for (x, y) in [(4,39),(10,42),(18,40),(26,43),(34,41),(42,39)] {
+            c.rect(x, y, 3, 2, p.stone)
+        }
+        // Tall pines on left
+        pine(c, x: 3, y: 36, size: 5)
+        pine(c, x: 7, y: 36, size: 4)
+        // Boundary marker / cairn with painted stripe
+        c.rect(22, 30, 4, 8, p.stone)
+        c.rect(22, 30, 4, 1, p.coral) // painted top
+        c.rect(22, 34, 4, 1, p.parchment) // stripe
+        // Terminus sign post
+        c.rect(30, 32, 1, 8, p.brown)
+        c.rect(29, 32, 6, 3, p.parchment)
+        c.px(31, 33, p.deep) // text hints
+        c.px(32, 33, p.deep)
+        c.px(33, 33, p.deep)
+    }
+}
+
+private enum ParallaxArtSHT {
+    /// Includes Lake Superior horizon strip — visible behind the mountain layer.
+    static let sky = PixelSprite(width: 8, height: 8) { c in
+        c.rect(0, 0, 8, 8, ArtPalette.sky)
+        // Subtle lake-country haze
+        c.rect(0, 0, 8, 2, ArtPalette.mountLight.opacity(0.3))
+    }
+
+    static let mountains = PixelSprite(width: 256, height: 96) { c in
+        let p = ArtPalette.self
+        // Sky wash
+        c.rect(0, 0, 256, 96, p.sky)
+        // Horizon haze
+        c.rect(0, 46, 256, 4, p.mountLight.opacity(0.5))
+        // Lake Superior horizon strip — THIS is the signature SHT backdrop
+        c.rect(0, 50, 256, 10, p.water.opacity(0.9))
+        c.rect(0, 50, 256, 1, p.mountDark.opacity(0.8))
+        // Sparkle on lake
+        for x in stride(from: 6, to: 256, by: 14) {
+            c.px(x, 54, p.waterLight)
+            c.px(x + 4, 57, p.waterLight)
+        }
+        // Low rolling Sawtooth basalt ridges
+        var heights: [Int] = []
+        let control: [Int] = [26, 32, 24, 30, 34, 22, 28, 36, 26, 22, 28, 30, 24, 26]
+        var adjusted = control
+        adjusted[adjusted.count - 1] = adjusted[0]
+        let span = 256 / (adjusted.count - 1)
+        for seg in 0..<(adjusted.count - 1) {
+            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            for i in 0..<span {
+                let t = Double(i) / Double(span)
+                heights.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+            }
+        }
+        while heights.count < 256 { heights.append(heights.last ?? 0) }
+        c.silhouette(heights: heights, baselineY: 95, color: p.mountDark)
+        // Sawtooth ridge lighter face
+        for x in 0..<256 {
+            let h = heights[x]
+            if h > 4 {
+                let top = 95 - h + 1
+                c.col(x, from: top, to: top + h / 4, p.hillDark)
+            }
+        }
+    }
+
+    static let hills = PixelSprite(width: 256, height: 64) { c in
+        let p = ArtPalette.self
+        var heights: [Int] = []
+        let control: [Int] = [16, 22, 28, 24, 30, 20, 26, 30, 24, 20, 24, 28, 18, 16]
+        var adjusted = control
+        adjusted[adjusted.count - 1] = adjusted[0]
+        let span = 256 / (adjusted.count - 1)
+        for seg in 0..<(adjusted.count - 1) {
+            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            for i in 0..<span {
+                let t = Double(i) / Double(span)
+                heights.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+            }
+        }
+        while heights.count < 256 { heights.append(heights.last ?? 0) }
+        c.silhouette(heights: heights, baselineY: 63, color: p.hillDark)
+        for x in 0..<256 {
+            let h = heights[x]
+            if h > 0 {
+                let top = 63 - h + 1
+                c.col(x, from: top, to: top + max(1, h / 3), p.hillLight)
+            }
+        }
+        // Mixed birch/aspen/spruce — white trunks scattered among dark conifers
+        for x in stride(from: 3, to: 256, by: 6) {
+            let h = heights[x]
+            if h > 3 {
+                let baseY = 63 - h
+                if x % 12 == 3 {
+                    // Birch — white trunk
+                    c.rect(x, baseY - 4, 1, 4, p.parchment)
+                    c.px(x, baseY - 2, p.deep)
+                    c.rect(x - 1, baseY - 4, 3, 1, p.hillLight)
+                } else {
+                    // Spruce
+                    c.rect(x, baseY - 4, 1, 4, p.treeDark)
+                    c.rect(x - 1, baseY - 3, 3, 1, p.green)
+                    c.rect(x - 1, baseY - 1, 3, 1, p.green)
+                }
+            }
+        }
+    }
+
+    static let ground = PixelSprite(width: 32, height: 16) { c in
+        let p = ArtPalette.self
+        // Boreal duff — darker, richer than JMT
+        c.rect(0, 0, 32, 16, p.brown)
+        c.rect(0, 0, 32, 2, p.treeDark)
+        c.rect(0, 2, 32, 1, p.green.opacity(0.6))
+        // Basalt pebbles
+        c.px(4, 8, p.stoneDark)
+        c.px(9, 10, p.stoneDark)
+        c.px(15, 7, p.stone)
+        c.px(22, 11, p.stoneDark)
+        c.px(27, 9, p.stoneDark)
+        c.px(6, 13, p.stoneDark)
+        c.px(20, 14, p.stone)
+        // Lichen specks
+        c.px(12, 6, p.hillLight)
+        c.px(26, 7, p.hillLight)
+    }
+}
+
+private enum FinaleArtSHT {
+    static let sht = PixelSprite(width: 512, height: 320) { c in
+        let p = ArtPalette.self
+        // Predawn sky with aurora
+        c.rect(0, 0, 512, 40, p.deep)
+        c.rect(0, 40, 512, 40, p.mountDark)
+        c.rect(0, 80, 512, 40, p.mountBlue)
+        c.rect(0, 120, 512, 60, p.sky)
+        // Aurora bands — green/purple ribbons across the upper sky
+        for y in 10..<70 {
+            let t = Double(y) / 60.0
+            let a = 0.4 - t * 0.3
+            for x in 0..<512 {
+                let phase = Double(x) * 0.02 + t * 3.0
+                let wave = sin(phase) * 6.0 + sin(phase * 1.7) * 3.0
+                let yOff = y + Int(wave)
+                if yOff >= 10 && yOff < 80 && (x + yOff) % 3 == 0 {
+                    c.px(x, yOff, p.green.opacity(a))
+                }
+                if yOff >= 10 && yOff < 80 && (x + yOff * 2) % 7 == 0 {
+                    c.px(x, yOff, p.coral.opacity(a * 0.5))
+                }
+            }
+        }
+        // Lake Superior — dominates the middle
+        c.rect(0, 180, 512, 70, p.mountDark)
+        c.rect(0, 180, 512, 4, p.mountLight.opacity(0.6))
+        c.rect(0, 200, 512, 1, p.waterLight.opacity(0.3))
+        c.rect(0, 215, 512, 1, p.waterLight.opacity(0.3))
+        c.rect(0, 235, 512, 1, p.waterLight.opacity(0.3))
+        // Lake sparkle — moonlight/pre-dawn shimmer
+        for x in stride(from: 10, to: 512, by: 20) {
+            c.px(x, 195, p.parchment.opacity(0.4))
+            c.px(x + 8, 210, p.parchment.opacity(0.3))
+            c.px(x + 4, 225, p.parchment.opacity(0.3))
+        }
+        // Distant lighthouse on far point — Split Rock silhouette
+        let llx = 380
+        c.rect(llx - 1, 172, 3, 10, p.parchment.opacity(0.7))
+        c.rect(llx - 2, 168, 5, 4, p.deep.opacity(0.8))
+        c.px(llx, 166, p.sun)
+        // Beam
+        c.rect(llx + 3, 170, 40, 1, p.sun.opacity(0.2))
+        c.rect(llx + 3, 171, 40, 1, p.sun.opacity(0.15))
+        // Far shore (Canada-side or distant point)
+        c.rect(350, 180, 50, 3, p.treeDark.opacity(0.7))
+        for x in stride(from: 350, to: 400, by: 4) {
+            c.rect(x, 177, 1, 3, p.treeDark)
+        }
+        // Basalt cliff foreground — hiker stands here
+        c.rect(0, 250, 512, 70, p.stoneDark)
+        c.rect(0, 248, 512, 3, p.stone)
+        // Cliff cracks
+        for x in stride(from: 20, to: 512, by: 40) {
+            c.col(x, from: 255, to: 310, p.deep)
+        }
+        // Trees on cliff
+        for x in [40, 80, 130, 470] {
+            c.rect(x, 244, 1, 6, p.treeDark)
+            c.rect(x - 2, 240, 5, 1, p.green)
+            c.rect(x - 3, 242, 7, 1, p.green)
+            c.rect(x - 2, 246, 5, 1, p.green)
+        }
+        // Hiker silhouette at cliff edge, pack on, arms at sides
+        let hx = 260, hy = 222
+        c.rect(hx - 2, hy, 4, 1, p.deep) // hat
+        c.rect(hx - 3, hy + 1, 6, 1, p.deep)
+        c.rect(hx - 1, hy + 2, 3, 3, p.skin)
+        c.rect(hx - 3, hy + 5, 7, 10, p.coral) // torso + pack
+        c.rect(hx - 4, hy + 6, 1, 6, p.coral) // arm
+        c.rect(hx + 4, hy + 6, 1, 6, p.coral)
+        c.rect(hx - 2, hy + 15, 2, 10, p.mountBlue)
+        c.rect(hx + 1, hy + 15, 2, 10, p.mountBlue)
+        c.rect(hx - 2, hy + 25, 2, 1, p.deep)
+        c.rect(hx + 1, hy + 25, 2, 1, p.deep)
+    }
+}
+
+private enum BadgeArtSHT {
+    static func plate(_ c: PixelCanvas, tint: Color, interior: (PixelCanvas) -> Void) {
+        let p = ArtPalette.self
+        c.rect(4, 4, 24, 24, tint)
+        c.rect(6, 2, 20, 2, tint)
+        c.rect(6, 28, 20, 2, tint)
+        c.rect(2, 6, 2, 20, tint)
+        c.rect(28, 6, 2, 20, tint)
+        c.rect(6, 6, 20, 20, p.parchment)
+        c.rect(6, 6, 20, 1, p.sand)
+        c.rect(6, 25, 20, 1, p.sand)
+        c.rect(6, 6, 1, 20, p.sand)
+        c.rect(25, 6, 1, 20, p.sand)
+        interior(c)
+    }
+
+    static let gitchiGumiWalker = PixelSprite(width: 32, height: 32) { c in
+        plate(c, tint: ArtPalette.mountBlue) { c in
+            let p = ArtPalette.self
+            // Water — filling lower half
+            c.rect(7, 16, 18, 9, p.water)
+            c.rect(7, 16, 18, 1, p.mountDark)
+            c.rect(8, 19, 16, 1, p.waterLight)
+            c.rect(8, 22, 16, 1, p.waterLight)
+            // Small island / point with lighthouse
+            c.rect(14, 13, 6, 3, p.stoneDark)
+            c.rect(16, 10, 2, 3, p.parchment)
+            c.rect(15, 8, 4, 2, p.deep)
+            c.rect(15, 7, 4, 1, p.coral)
+            c.px(16, 6, p.deep)
+            // Sky above
+            c.rect(7, 9, 7, 7, p.sky)
+            c.rect(20, 9, 5, 7, p.sky)
+            // Tiny boat
+            c.rect(9, 22, 3, 1, p.deep)
+            c.px(10, 21, p.coral)
+        }
+    }
+
+    static let lighthouseFriend = PixelSprite(width: 32, height: 32) { c in
+        plate(c, tint: ArtPalette.coral) { c in
+            let p = ArtPalette.self
+            // Background night sky in badge center
+            c.rect(7, 7, 18, 14, p.mountBlue)
+            // Lighthouse tower
+            c.rect(15, 10, 2, 10, p.parchment)
+            c.rect(14, 9, 4, 1, p.deep)
+            c.rect(14, 20, 4, 1, p.deep)
+            // Lamp room
+            c.rect(14, 7, 4, 2, p.deep)
+            c.rect(15, 6, 2, 1, p.sun)
+            // Red dome
+            c.rect(14, 5, 4, 1, p.coral)
+            c.rect(15, 4, 2, 1, p.coral)
+            // Light beam — wedge radiating right
+            c.px(18, 7, p.sun.opacity(0.6))
+            c.px(19, 6, p.sun.opacity(0.4))
+            c.px(20, 7, p.sun.opacity(0.3))
+            c.px(19, 8, p.sun.opacity(0.4))
+            c.px(20, 8, p.sun.opacity(0.3))
+            c.px(21, 7, p.sun.opacity(0.2))
+            c.px(21, 8, p.sun.opacity(0.2))
+            // Water base
+            c.rect(7, 21, 18, 4, p.water)
+            c.rect(7, 21, 18, 1, p.waterLight)
+        }
+    }
+
+    static let mooseTracker = PixelSprite(width: 32, height: 32) { c in
+        plate(c, tint: ArtPalette.brown) { c in
+            let p = ArtPalette.self
+            // Moose silhouette — unmistakable bulky body, long legs, drooping muzzle
+            // Body
+            c.rect(10, 14, 10, 6, p.bear)
+            c.rect(11, 13, 8, 1, p.bear)
+            // Hump (shoulder)
+            c.rect(10, 12, 4, 2, p.bear)
+            // Neck
+            c.rect(19, 13, 2, 3, p.bear)
+            // Head
+            c.rect(20, 10, 3, 4, p.bear)
+            // Muzzle — droops forward
+            c.rect(22, 12, 2, 3, p.bear)
+            // Antlers — paddled
+            c.rect(18, 8, 3, 1, p.brown)
+            c.rect(17, 9, 1, 1, p.brown)
+            c.rect(21, 9, 3, 1, p.brown)
+            c.rect(24, 8, 1, 2, p.brown)
+            // Legs — four long
+            c.rect(11, 20, 1, 4, p.bear)
+            c.rect(13, 20, 1, 4, p.bear)
+            c.rect(16, 20, 1, 4, p.bear)
+            c.rect(18, 20, 1, 4, p.bear)
+            // Tiny eye
+            c.px(21, 11, p.sunrise)
+            // Hoof-track below
+            c.rect(10, 24, 2, 2, p.deep)
+            c.rect(14, 25, 2, 2, p.deep)
+        }
+    }
+
+    static let northShoreChronicler = PixelSprite(width: 32, height: 32) { c in
+        plate(c, tint: ArtPalette.mountBlue) { c in
+            let p = ArtPalette.self
+            // Open book — pages
+            c.rect(8, 11, 8, 12, p.paperYellow)
+            c.rect(16, 11, 8, 12, p.paperYellow)
+            c.rect(15, 10, 2, 14, p.brown)
+            // Outer covers
+            c.rect(7, 10, 1, 14, p.deep)
+            c.rect(24, 10, 1, 14, p.deep)
+            c.rect(8, 10, 7, 1, p.deep)
+            c.rect(17, 10, 7, 1, p.deep)
+            c.rect(8, 23, 16, 1, p.deep)
+            // Wave symbol across the spine — three wavy lines
+            c.px(9, 14, p.water); c.px(10, 13, p.water); c.px(11, 14, p.water)
+            c.px(12, 13, p.water); c.px(13, 14, p.water); c.px(14, 13, p.water)
+            c.px(17, 14, p.water); c.px(18, 13, p.water); c.px(19, 14, p.water)
+            c.px(20, 13, p.water); c.px(21, 14, p.water); c.px(22, 13, p.water)
+            c.px(9, 17, p.water); c.px(10, 16, p.water); c.px(11, 17, p.water)
+            c.px(12, 16, p.water); c.px(13, 17, p.water); c.px(14, 16, p.water)
+            c.px(17, 17, p.water); c.px(18, 16, p.water); c.px(19, 17, p.water)
+            c.px(20, 16, p.water); c.px(21, 17, p.water); c.px(22, 16, p.water)
+            // Text lines below
+            c.rect(9, 19, 5, 1, p.brown)
+            c.rect(9, 21, 4, 1, p.brown)
+            c.rect(17, 19, 5, 1, p.brown)
+            c.rect(17, 21, 3, 1, p.brown)
+        }
     }
 }
 

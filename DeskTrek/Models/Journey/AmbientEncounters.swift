@@ -188,13 +188,15 @@ struct AmbientLayoutContext {
 
 enum AmbientPool {
     /// Returns the weighted species list for a given trail + mile + band.
-    /// Uses JMT-tuned biome zones for trail id `"jmt"`; any other trail gets
+    /// Each trail id has its own biome-tuned pool; unknown ids fall back to
     /// the generic safe-for-any-biome pool.
     static func species(trailID: String, mile: Double, band: AmbientZLayer) -> [AmbientSpecies] {
-        if trailID == "jmt" {
-            return jmt(mile: mile, band: band)
+        switch trailID {
+        case "jmt":        return jmt(mile: mile, band: band)
+        case "wonderland": return wonderland(mile: mile, band: band)
+        case "sht":        return sht(mile: mile, band: band)
+        default:           return generic(band: band)
         }
-        return generic(band: band)
     }
 
     private static func jmt(mile: Double, band: AmbientZLayer) -> [AmbientSpecies] {
@@ -230,6 +232,83 @@ enum AmbientPool {
             return [.hiker, .raven]
         case (.foreground, _):
             return [.pika, .raven, .hiker]
+        }
+    }
+
+    private static func wonderland(mile: Double, band: AmbientZLayer) -> [AmbientSpecies] {
+        // Mt. Rainier circuit: wet PNW forest low, wildflower subalpine middle,
+        // alpine scree high. Eagle, marmot, bear, deer are the signature life.
+        switch (band, mile) {
+        // 0..<20 — old-growth forest ascent
+        case (.sky, 0..<20):
+            return [.cloudLarge, .cloudLarge, .bird, .bird, .birdFlock, .raven]
+        case (.distance, 0..<20):
+            return [.hiker, .hiker, .raven, .bear]
+        case (.foreground, 0..<20):
+            return [.deer, .deer, .squirrel, .butterfly, .hiker]
+
+        // 20..<55 — subalpine meadows: wildflowers, marmots, elk/deer
+        case (.sky, 20..<55):
+            return [.cloudSmall, .cloudLarge, .bird, .eagle, .raven, .rain]
+        case (.distance, 20..<55):
+            return [.hiker, .bear, .deer, .raven]
+        case (.foreground, 20..<55):
+            return [.marmot, .marmot, .deer, .butterfly, .butterfly, .squirrel, .hiker]
+
+        // 55..<80 — alpine: sparse life, lots of weather
+        case (.sky, 55..<80):
+            return [.cloudLarge, .cloudLarge, .eagle, .raven, .rain]
+        case (.distance, 55..<80):
+            return [.hiker, .raven, .raven]
+        case (.foreground, 55..<80):
+            return [.marmot, .pika, .pika, .hiker]
+
+        // 80+ — Panhandle Gap descent: cold, ravens, snow possible
+        case (.sky, _):
+            return [.cloudLarge, .eagle, .raven, .snow]
+        case (.distance, _):
+            return [.hiker, .raven]
+        case (.foreground, _):
+            return [.pika, .marmot, .hiker]
+        }
+    }
+
+    private static func sht(mile: Double, band: AmbientZLayer) -> [AmbientSpecies] {
+        // Lake Superior north shore: boreal forest, inland lakes, cliffs.
+        // Loon calls are handled by narrative encounters; ambient life here is
+        // deer, bear, eagle, raven, butterfly. Fog-effect uses rain sheet.
+        switch (band, mile) {
+        // 0..<50 — Jay Cooke / Duluth: urban-adjacent, deciduous
+        case (.sky, 0..<50):
+            return [.cloudSmall, .cloudLarge, .bird, .bird, .birdFlock, .eagle]
+        case (.distance, 0..<50):
+            return [.hiker, .hiker, .raven]
+        case (.foreground, 0..<50):
+            return [.deer, .squirrel, .squirrel, .butterfly, .hiker, .hiker]
+
+        // 50..<150 — waterfall country: boreal forest thick, more wildlife
+        case (.sky, 50..<150):
+            return [.cloudSmall, .cloudLarge, .bird, .eagle, .raven, .rain]
+        case (.distance, 50..<150):
+            return [.hiker, .bear, .deer, .raven]
+        case (.foreground, 50..<150):
+            return [.deer, .deer, .squirrel, .butterfly, .hiker]
+
+        // 150..<250 — remote inland ridges: wolves, moose (via encounters), bears
+        case (.sky, 150..<250):
+            return [.cloudLarge, .cloudLarge, .eagle, .eagle, .raven, .rain]
+        case (.distance, 150..<250):
+            return [.hiker, .bear, .bear, .raven]
+        case (.foreground, 150..<250):
+            return [.deer, .squirrel, .butterfly, .hiker]
+
+        // 250+ — Grand Portage approach: colder, quieter, northern lights country
+        case (.sky, _):
+            return [.cloudLarge, .eagle, .raven, .snow]
+        case (.distance, _):
+            return [.hiker, .raven, .bear]
+        case (.foreground, _):
+            return [.deer, .squirrel, .hiker]
         }
     }
 

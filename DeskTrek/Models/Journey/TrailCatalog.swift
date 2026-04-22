@@ -2,7 +2,9 @@ import Foundation
 
 enum TrailCatalog {
     static let all: [Trail] = [
-        .johnMuir
+        .johnMuir,
+        .wonderland,
+        .superiorHiking
     ]
 
     static func trail(for id: String) -> Trail? {

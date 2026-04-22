@@ -81,16 +81,20 @@ Full log of every session — distance, time, steps, calories. Consecutive-day s
 ## Shipping trail content
 
 ```
-     /\
-    /  \      JOHN MUIR TRAIL
-   /    \     Yosemite Valley  ->  Mt. Whitney
-  /      \    211 miles, 8 landmarks, 9 badges
- /________\
+     /\              /\/\              /\
+    /  \            /    \          /\/  \
+   /    \          /      \        /      \___
+  /      \        /        \      /           \
+ /________\      /__________\    /_____________\
+  JMT             WONDERLAND      SUPERIOR HIKING
+  211 mi          93 mi           310 mi
 ```
 
-- **John Muir Trail** — 211 miles, Yosemite Valley to Mt. Whitney, 8 landmarks, 9 badges, narrative encounters + subquest arcs authored in [DeskTrek/Models/Journey/Content/JohnMuirTrail.swift](DeskTrek/Models/Journey/Content/JohnMuirTrail.swift).
+- **John Muir Trail** — 211 miles, Yosemite Valley to Mt. Whitney. High Sierra granite and glacial passes. 8 landmarks, 3 subquest arcs, narrative encounters. Authored in [DeskTrek/Models/Journey/Content/JohnMuirTrail.swift](DeskTrek/Models/Journey/Content/JohnMuirTrail.swift).
+- **Wonderland Trail** — 93 miles, circumnavigates Mt. Rainier. Pacific Northwest biome: glaciated volcano, subalpine wildflower meadows, Douglas-fir old growth. 8 landmarks, 2 subquest arcs (*The Circumnavigation*, *Weather Eye*). Authored in [DeskTrek/Models/Journey/Content/WonderlandTrail.swift](DeskTrek/Models/Journey/Content/WonderlandTrail.swift).
+- **Superior Hiking Trail** — 310 miles, Jay Cooke State Park to Grand Portage along Minnesota's north shore. Boreal biome: basalt cliffs, waterfalls, Lake Superior on the eastern horizon, birch and spruce. 10 landmarks, 3 subquest arcs (*The Lightkeeper's Ghost*, *Moose Country*, *The Driftwood Journal*). Authored in [DeskTrek/Models/Journey/Content/SuperiorHikingTrail.swift](DeskTrek/Models/Journey/Content/SuperiorHikingTrail.swift).
 
-Adding a new trail is a single Swift file plus one line in [DeskTrek/Models/Journey/TrailCatalog.swift](DeskTrek/Models/Journey/TrailCatalog.swift). Pixel art for landmarks, parallax layers, badges, and the finale scene is drawn programmatically in Swift in [DeskTrek/Views/Journey/Art/](DeskTrek/Views/Journey/Art/) — no sprite-sheet pipeline, no asset management.
+Adding a new trail is a single Swift file plus one line in [DeskTrek/Models/Journey/TrailCatalog.swift](DeskTrek/Models/Journey/TrailCatalog.swift). Pixel art for landmarks, parallax layers, badges, and the finale scene is drawn programmatically in Swift in [DeskTrek/Views/Journey/Art/](DeskTrek/Views/Journey/Art/) — no sprite-sheet pipeline, no asset management. Ambient wildlife (birds, weather, deer, bears, eagles, marmots, pikas) is shared across all trails with per-biome species mixes defined in [DeskTrek/Models/Journey/AmbientEncounters.swift](DeskTrek/Models/Journey/AmbientEncounters.swift).
 
 ## Supported treadmills
 
@@ -198,7 +202,9 @@ DeskTrek/
 │       ├── TrailSignposts.swift        # Wooden mile-marker spawn rules
 │       ├── CertificateRenderer.swift   # PDF certificate renderer
 │       └── Content/
-│           └── JohnMuirTrail.swift     # JMT landmarks, encounters, badges
+│           ├── JohnMuirTrail.swift       # JMT landmarks, encounters, badges
+│           ├── WonderlandTrail.swift     # Mt. Rainier loop
+│           └── SuperiorHikingTrail.swift # Lake Superior north shore
 └── Views/
     ├── RetroTheme.swift                # Palette, fonts, panel/button styles
     ├── MenuBarView.swift               # Menu bar popover
@@ -266,7 +272,8 @@ The FTMS adapter implements the official [Bluetooth Fitness Machine Service](htt
 - Smart notifications with streak tracking
 - Speed calibration refinement (in progress)
 - HealthKit sync (planned)
-- Additional trail content beyond JMT (planned / contributions welcome)
+- Three shipping trails: John Muir (211 mi), Wonderland (93 mi), Superior Hiking (310 mi)
+- Additional trail content always welcome — see contributing guide below
 
 ## Contributing
 

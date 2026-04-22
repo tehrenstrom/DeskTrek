@@ -4,7 +4,8 @@ struct BadgesView: View {
     let appState: AppState
 
     private var allBadges: [Badge] {
-        TrailCatalog.all.flatMap { $0.badges }
+        var seen = Set<String>()
+        return TrailCatalog.all.flatMap { $0.badges }.filter { seen.insert($0.id).inserted }
     }
 
     var body: some View {

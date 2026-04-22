@@ -1448,10 +1448,14 @@ private enum ParallaxArtWonder {
         adjusted[adjusted.count - 1] = adjusted[0]
         let span = 256 / (adjusted.count - 1)
         for seg in 0..<(adjusted.count - 1) {
-            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            let a = adjusted[seg]
+            let b = adjusted[seg + 1]
+            let ad = Double(a)
+            let bd = Double(b)
             for i in 0..<span {
                 let t = Double(i) / Double(span)
-                back.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+                let lerp: Double = ad * (1.0 - t) + bd * t
+                back.append(Int(lerp.rounded()))
             }
         }
         while back.count < 256 { back.append(back.last ?? 0) }
@@ -1512,10 +1516,14 @@ private enum ParallaxArtWonder {
         adjusted[adjusted.count - 1] = adjusted[0]
         let span = 256 / (adjusted.count - 1)
         for seg in 0..<(adjusted.count - 1) {
-            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            let a = adjusted[seg]
+            let b = adjusted[seg + 1]
+            let ad = Double(a)
+            let bd = Double(b)
             for i in 0..<span {
                 let t = Double(i) / Double(span)
-                heights.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+                let lerp: Double = ad * (1.0 - t) + bd * t
+                heights.append(Int(lerp.rounded()))
             }
         }
         while heights.count < 256 { heights.append(heights.last ?? 0) }
@@ -2144,10 +2152,14 @@ private enum ParallaxArtSHT {
         adjusted[adjusted.count - 1] = adjusted[0]
         let span = 256 / (adjusted.count - 1)
         for seg in 0..<(adjusted.count - 1) {
-            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            let a = adjusted[seg]
+            let b = adjusted[seg + 1]
+            let ad = Double(a)
+            let bd = Double(b)
             for i in 0..<span {
                 let t = Double(i) / Double(span)
-                heights.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+                let lerp: Double = ad * (1.0 - t) + bd * t
+                heights.append(Int(lerp.rounded()))
             }
         }
         while heights.count < 256 { heights.append(heights.last ?? 0) }
@@ -2170,10 +2182,14 @@ private enum ParallaxArtSHT {
         adjusted[adjusted.count - 1] = adjusted[0]
         let span = 256 / (adjusted.count - 1)
         for seg in 0..<(adjusted.count - 1) {
-            let a = adjusted[seg]; let b = adjusted[seg + 1]
+            let a = adjusted[seg]
+            let b = adjusted[seg + 1]
+            let ad = Double(a)
+            let bd = Double(b)
             for i in 0..<span {
                 let t = Double(i) / Double(span)
-                heights.append(Int((Double(a) * (1 - t) + Double(b) * t).rounded()))
+                let lerp: Double = ad * (1.0 - t) + bd * t
+                heights.append(Int(lerp.rounded()))
             }
         }
         while heights.count < 256 { heights.append(heights.last ?? 0) }

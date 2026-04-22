@@ -32,3 +32,6 @@ Package.resolved
 # Build artifacts
 build-output.txt
 *.command
+
+# Claude Code local config (per-user permissions, absolute paths, machine-specific)
+.claude/

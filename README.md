@@ -31,6 +31,7 @@ Pick a trail and start walking. Your treadmill miles accumulate along a real-wor
 
 - **Animated pixel-art biome** — mountains, hills, and ground scroll in parallax; a 4-frame hiker walk cycle steps in time with your actual treadmill speed.
 - **Landmarks** — named mile markers (Happy Isles, Half Dome, Cathedral Peak, Muir Pass, Mt. Whitney…) pass by with flavor text, a pixel sprite portrait, and an 8-bit chime when you reach them.
+- **Trail signposts** — small wooden mile markers drift through the foreground so you can feel the miles ticking off even between named landmarks.
 - **Encounters** — narrative choices appear at specific miles. A storm on the pass: push through or make camp? Each choice nudges your **morale** and **energy** bars and can award a badge.
 - **Subquests** — multi-stage encounter chains that unlock a completion badge when you finish the arc (e.g. *Bear Canister Master*, *Sierra Storyteller*).
 - **Ambient life** — clouds drift, eagles glide, marmots sit on talus, deer stand in the distance, the occasional bear moves through the treeline. Spawns are deterministic per-mile (seeded RNG), so the same stretch of trail always feels like the same stretch of trail.
@@ -75,7 +76,7 @@ Morning motivation, goal nudges, streak alerts, milestone celebrations. Rate-lim
 
 ### Workout history & streaks
 
-Full log of every session — distance, time, steps, calories. Consecutive-day streaks, because campfires need tending.
+Full log of every session — distance, time, steps, calories. Consecutive-day streaks, because campfires need tending. Step counts are derived from distance and your stride length, so the numbers stay consistent even on treadmills that don't report steps natively.
 
 ## Shipping trail content
 
@@ -179,6 +180,7 @@ DeskTrek/
 │   ├── Goal.swift, GoalManager.swift   # Goal definitions + tracking
 │   ├── NotificationManager.swift       # Smart notification scheduling
 │   ├── StatsCalculator.swift           # Workout statistics
+│   ├── StepsEstimate.swift             # Distance → steps estimation (stride-length based)
 │   ├── TrailMessages.swift             # Context-aware Oregon-Trail copy
 │   ├── TreadmillState.swift            # Live treadmill state
 │   ├── WalkSession.swift               # Active walk session model
@@ -193,6 +195,7 @@ DeskTrek/
 │       ├── JourneyStore.swift          # Journey + trophy persistence
 │       ├── LegacyJourneyMigration.swift# Upgrade path from v1 journeys
 │       ├── AmbientEncounters.swift     # Wildlife/weather spawning rules
+│       ├── TrailSignposts.swift        # Wooden mile-marker spawn rules
 │       ├── CertificateRenderer.swift   # PDF certificate renderer
 │       └── Content/
 │           └── JohnMuirTrail.swift     # JMT landmarks, encounters, badges
@@ -227,7 +230,9 @@ DeskTrek/
             ├── HikerSprite.swift       # Walk-cycle renderer
             ├── LandmarkSprite.swift    # Landmark portrait renderer
             ├── ParallaxLayer.swift     # Tileable parallax band
-            └── AmbientEncounterLayer.swift  # Wildlife/weather overlay
+            ├── AmbientEncounterLayer.swift  # Wildlife/weather overlay
+            ├── TrailSignpostView.swift      # Single wooden mile-marker sprite
+            └── TrailSignpostLayer.swift     # Signpost spawning + drift layer
 ```
 
 **Tech stack:** Swift, SwiftUI, CoreBluetooth, SwiftUI Charts, AVAudioEngine (synthesized SFX).

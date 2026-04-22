@@ -5,7 +5,7 @@ enum MainSidebarItem: String, Hashable, CaseIterable {
     case trail
     case trophies
     case badges
-    case provisions
+    case ambitions
     case journal
     case trailhead
     case settings
@@ -16,7 +16,7 @@ enum MainSidebarItem: String, Hashable, CaseIterable {
         case .trail: return "Trail"
         case .trophies: return "Trophy Wall"
         case .badges: return "Badges"
-        case .provisions: return "Provisions"
+        case .ambitions: return "Ambitions"
         case .journal: return "Journal"
         case .trailhead: return "Trailhead"
         case .settings: return "Settings"
@@ -29,7 +29,7 @@ enum MainSidebarItem: String, Hashable, CaseIterable {
         case .trail: return "map"
         case .trophies: return "rosette"
         case .badges: return "shield"
-        case .provisions: return "target"
+        case .ambitions: return "target"
         case .journal: return "book.closed"
         case .trailhead: return "signpost.right"
         case .settings: return "gearshape"
@@ -59,7 +59,7 @@ struct MainShell: View {
                 TrophyWallView(appState: appState)
             case .badges:
                 BadgesView(appState: appState)
-            case .provisions:
+            case .ambitions:
                 GoalsView(appState: appState, onOpenTrail: { selectedItem = .trail })
             case .journal:
                 HistoryView(appState: appState)

@@ -64,7 +64,7 @@ Connects over Bluetooth Low Energy across four protocol families (see table belo
 
 ### Goal tracking
 
-Daily, weekly, monthly, or yearly goals for distance, time, or steps. Progress bars, streak tracking, goal-hit celebrations. Provisions for the long haul.
+Daily, weekly, monthly, or yearly goals for distance, time, or steps. Progress bars, streak tracking, goal-hit celebrations. Ambitions for the long haul.
 
 ### Auto-recording
 
@@ -203,7 +203,7 @@ DeskTrek/
     ├── RetroTheme.swift                # Palette, fonts, panel/button styles
     ├── MenuBarView.swift               # Menu bar popover
     ├── DashboardView.swift             # Trail Status dashboard
-    ├── GoalsView.swift                 # Provisions
+    ├── GoalsView.swift                 # Ambitions
     ├── HistoryView.swift               # Journal
     ├── ConnectionView.swift            # Trailhead (BLE connection)
     ├── SettingsView.swift              # Camp

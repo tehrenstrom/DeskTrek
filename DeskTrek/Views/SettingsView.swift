@@ -45,7 +45,7 @@ struct SettingsView: View {
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
                     }
                 } header: {
-                    Text("WAGON SETTINGS")
+                    Text("TRAIL SETTINGS")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundStyle(TrailColor.text)
                         .tracking(1)

@@ -17,7 +17,7 @@ struct GoalsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
-                    Text("PROVISIONS")
+                    Text("AMBITIONS")
                         .font(.system(size: 18, weight: .bold, design: .monospaced))
                         .foregroundStyle(TrailColor.text)
                         .tracking(2)
@@ -25,7 +25,7 @@ struct GoalsView: View {
                     Button {
                         showingAddGoal = true
                     } label: {
-                        Label("New Ration", systemImage: "plus")
+                        Label("New Ambition", systemImage: "plus")
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
                     }
                     .buttonStyle(.borderedProminent)
@@ -64,7 +64,7 @@ struct GoalsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(TrailColor.parchment)
-        .navigationTitle("Provisions")
+        .navigationTitle("Ambitions")
         .sheet(isPresented: $showingAddGoal) {
             AddGoalSheet(appState: appState)
         }
@@ -75,10 +75,10 @@ struct GoalsView: View {
         VStack(spacing: 12) {
             Text("\u{1F3AF}")
                 .font(.system(size: 36))
-            Text("No provisions packed")
+            Text("No ambitions packed")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.6))
-            Text("Set a daily, weekly, or monthly ration to track your distance.")
+            Text("Set a daily, weekly, or monthly ambition to track your distance.")
                 .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundStyle(TrailColor.text.opacity(0.4))
                 .multilineTextAlignment(.center)
@@ -213,7 +213,7 @@ struct AddGoalSheet: View {
     let appState: AppState
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name = "Daily Walking Ration"
+    @State private var name = "Daily Walking Ambition"
     @State private var type: GoalType = .distance
     @State private var target: Double = 5.0
     @State private var timeframe: GoalTimeframe = .daily
@@ -227,7 +227,7 @@ struct AddGoalSheet: View {
             TrailColor.parchment.ignoresSafeArea()
 
             VStack(spacing: 20) {
-                Text("NEW PROVISION")
+                Text("NEW AMBITION")
                     .font(.system(size: 18, weight: .bold, design: .monospaced))
                     .foregroundStyle(TrailColor.text)
                     .tracking(2)
